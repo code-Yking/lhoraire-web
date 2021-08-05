@@ -1,0 +1,3 @@
+[submodule "lhoraire-scheduler"]
+	path = lhoraire-scheduler
+	url = https://github.com/code-Yking/lhoraire-scheduler
