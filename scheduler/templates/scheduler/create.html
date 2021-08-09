@@ -1,0 +1,14 @@
+
+
+
+{% block content %}
+
+<h1>Create Task</h1>
+
+<form action="{% url 'scheduler:create' %}" method="post">
+    {% csrf_token %}
+    {{form}}
+    <input type="submit" value="Login">
+</form>
+
+{% endblock %}
