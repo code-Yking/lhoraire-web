@@ -9,6 +9,14 @@ from scheduler.lhoraire_scheduler.reposition import Reposition
 from scheduler.lhoraire_scheduler.filter import Filter
 from scheduler.lhoraire_scheduler.helpers import *
 
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from rest_framework.parsers import JSONParser
+from .models import Days
+from .serializers import DaysSerializer
+from rest_framework.response import Response
+
 
 def get_name(request):
     # if this is a POST request we need to process the form data
@@ -45,3 +53,14 @@ def get_name(request):
 
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
+
+
+@api_view(['GET', 'POST'])
+def schedule(request):
+    if request.user.is_authenticated:
+        if request.method == 'GET':
+            days = Days.objects.filter(user=request.user)
+            daysserializer = DaysSerializer(days, many=True)
+            result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
+                      for day in daysserializer.data}
+            return Response(result)

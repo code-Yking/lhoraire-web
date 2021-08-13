@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from django.db.models.deletion import CASCADE
 # Create your models here.
 
@@ -32,4 +32,4 @@ class Days(models.Model):
     tasks = models.ManyToManyField(Tasks)
 
     def __str__(self):
-        return self.date
+        return f'{self.date}'
