@@ -14,5 +14,5 @@ class DaysSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Days
-        fields = ['date', 'user', 'tasks']
+        fields = ['date', 'tasks']
         # depth = 2

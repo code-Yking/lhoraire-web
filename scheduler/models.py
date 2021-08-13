@@ -8,10 +8,12 @@ from django.db.models.deletion import CASCADE
 class TaskInfo(models.Model):
     task_name = models.CharField(max_length=50)
     task_description = models.TextField()
-    due_date = models.DateTimeField()
+    due_date = models.DateField()
     hours_needed = models.DecimalField(decimal_places=2, max_digits=4)
-
-    days_needed = models.DecimalField(decimal_places=2, max_digits=4)
+    days_needed = models.DecimalField(
+        decimal_places=2, max_digits=4, default=0)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE, default=None)
 
     def __str__(self):
         return self.task_name
@@ -27,8 +29,6 @@ class Tasks(models.Model):
 
 class Days(models.Model):
     date = models.DateField()
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE, default=None)
     tasks = models.ManyToManyField(Tasks)
 
     def __str__(self):
