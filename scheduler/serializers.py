@@ -16,3 +16,10 @@ class DaysSerializer(serializers.ModelSerializer):
         model = Days
         fields = ['date', 'tasks']
         # depth = 2
+
+
+class TaskInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskInfo
+        fields = ['id', 'task_name', 'hours_needed', 'start_date',
+                  'due_date', 'gradient', 'modified_date']

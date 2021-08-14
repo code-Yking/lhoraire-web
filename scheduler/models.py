@@ -1,19 +1,44 @@
+from datetime import datetime, date
 from django.db import models
 from django.conf import settings
 # from django.contrib.auth.models import User
 from django.db.models.deletion import CASCADE
+
+import pytz
 # Create your models here.
+
+
+class UserInfo(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    time_zone = models.IntegerField(
+        choices=list(enumerate(pytz.common_timezones)))
+
+    week_day_work = models.DecimalField(decimal_places=2, max_digits=4)
+    max_week_day_work = models.DecimalField(decimal_places=2, max_digits=4)
+
+    week_end_work = models.DecimalField(decimal_places=2, max_digits=4)
+    max_week_end_work = models.DecimalField(decimal_places=2, max_digits=4)
+
+    def __str__(self) -> str:
+        return self.user.username
 
 
 class TaskInfo(models.Model):
     task_name = models.CharField(max_length=50)
     task_description = models.TextField()
+
+    start_date = models.DateField(null=True)
     due_date = models.DateField()
+
     hours_needed = models.DecimalField(decimal_places=2, max_digits=4)
     days_needed = models.DecimalField(
-        decimal_places=2, max_digits=4, default=0)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE, default=None)
+        decimal_places=2, max_digits=4, default=0, null=True)
+
+    gradient = models.CharField(max_length=1, null=True)
+
+    modified_date = models.DateField(null=True)
+    user = models.ForeignKey(UserInfo, on_delete=CASCADE, default="")
 
     def __str__(self):
         return self.task_name

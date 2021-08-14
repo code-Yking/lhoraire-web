@@ -1,9 +1,13 @@
+from datetime import date, datetime
 from django.contrib.auth.decorators import login_required
+from django.forms.formsets import formset_factory
+from django.forms.models import modelformset_factory
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+import pytz
 
-from .forms import TaskForm
+from .forms import TaskForm, TaskModelFormSet
 
 from scheduler.lhoraire_scheduler.model import TaskModel
 from scheduler.lhoraire_scheduler.reposition import Reposition
@@ -14,55 +18,75 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
-from .models import Days, TaskInfo
-from .serializers import DaysSerializer
+from .models import Days, TaskInfo, UserInfo
+from .serializers import DaysSerializer, TaskInfoSerializer
 from rest_framework.response import Response
 
 
 @login_required
 def get_name(request):
     # if this is a POST request we need to process the form data
+    TaskFormSet = formset_factory(TaskForm, extra=1)
+
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
 
-        new_task = TaskInfo(user=request.user)
+        # new_task = TaskInfo(user=request.user)
 
-        form = TaskForm(request.POST, instance=new_task)
+        formset = TaskFormSet(request.POST)
         # check whether it's valid:
-        if form.is_valid():
-            # task_cumulation = {}
-            # task_name = form.cleaned_data['task_name']
-            # work = form.cleaned_data['work']
-            # due_date = getDateDelta(form.cleaned_data['due_date'])
-            # gradient = form.cleaned_data['gradient']
-            # form['user'] = request.user
-            form.save()
+        if formset.is_valid():
+            newtask_cumulation = {}
 
-            # task = TaskModel(id=1, due=due_date, work=work,
-            #                  week_day_work=6, days=0, gradient=gradient, today=getDateDelta(datetime.now()) + 1)
-            # task_cumulation[(1, task_name, due_date)] = task
+            tasks = TaskInfo.objects.filter(user__user=request.user)
+            taskinfoserializer = TaskInfoSerializer(tasks, many=True)
+            # result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
+            #           for day in daysserializer.data}
+            oldtasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+                                           getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
 
-            # newtasks = Filter(task_cumulation)
+            for i, form in enumerate(formset.forms):
+                obj = form.save(commit=False)
+
+                userinfo = UserInfo.objects.filter(user=request.user).first()
+                timezone = pytz.common_timezones[userinfo.time_zone]
+                t = datetime.now(
+                    pytz.timezone(timezone)).date()
+                print(timezone, t, datetime.now())
+
+                obj.modified_date = t
+                obj.user = userinfo
+
+                task = TaskModel(id=1, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
+                                 week_day_work=6, days=0, gradient=obj.gradient, today=getDateDelta(date.today()) + 1)
+                obj.save()
+                newtask_cumulation[(obj.id, obj.task_name,
+                                    getDateDelta(obj.due_date))] = task
+
+            print(newtask_cumulation)
+
+            newtasks = Filter(newtask_cumulation, oldtasks)
+            print('new: ', newtasks)
             # process = Reposition(newtasks, (6, 10), (8, 14), {})
 
-            # print(process.schedule)
             # process the data in form.cleaned_data as required
             # ...
             # redirect to a new URL:
-            return HttpResponseRedirect('/scheduler')
+            # print(formset.cleaned_data)
+            return HttpResponseRedirect('create')
 
     # if a GET (or any other method) we'll create a blank form
     else:
-        form = TaskForm()
+        formset = TaskFormSet()
 
-    return render(request, 'scheduler/create.html', {'form': form})
+    return render(request, 'scheduler/create.html', {'formset': formset})
 
 
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
 
 
-@api_view(['GET', 'POST'])
+@ api_view(['GET', 'POST'])
 def schedule(request):
     if request.user.is_authenticated:
         if request.method == 'GET':
@@ -70,4 +94,17 @@ def schedule(request):
             daysserializer = DaysSerializer(days, many=True)
             result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
                       for day in daysserializer.data}
+            return Response(result)
+
+
+@ api_view(['GET', 'POST'])
+def tasks(request):
+    if request.user.is_authenticated:
+        if request.method == 'GET':
+            tasks = TaskInfo.objects.filter(user__user=request.user)
+            taskinfoserializer = TaskInfoSerializer(tasks, many=True)
+            # result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
+            #           for day in daysserializer.data}
+            result = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])],
+                                         getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
             return Response(result)
