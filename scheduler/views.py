@@ -72,7 +72,7 @@ def get_name(request):
             # fetching existing schedule as json/dict, so that it can be used by backend
             days = Days.objects.filter(tasks__task__user__user=request.user)
             daysserializer = DaysSerializer(days, many=True)
-            exist_schedule_formated = {day['date']: {'quots': {task['task']: task['hours'] for task in day['tasks']}}
+            exist_schedule_formated = {day['date']: {'quots': {f"t{task['task']}": float(task['hours']) for task in day['tasks']}}
                                        for day in daysserializer.data}
 
             # performing backend schedule generation
@@ -88,13 +88,6 @@ def get_name(request):
             #                        'start_date':info[2][0], 'due_date': info[2][1], 'modified_date': local_date} for task, info in updated_tasks.items()]
 
             pprint.pprint(final_schedule)
-
-            new_schedule_reformated = [{'date': datestr, 'tasks': [
-                {'task': int(f"{task.strip('t')}"), 'hours': quot} for task, quot in info['quots'].items()]} for datestr, info in final_schedule.items()]
-            # daysdeserializer = DaysSerializer(
-            #     data=new_schedule_reformated, many=True)
-            # if daysdeserializer.is_valid():
-            daysserializer.update(days, new_schedule_reformated)
 
             # saving the formset with the start date now available
             # for form in formset:
@@ -115,6 +108,12 @@ def get_name(request):
             # if taskinput.is_valid():
             #     taskinput.save(user=userinfo)
 
+            new_schedule_reformated = [{'date': datestr, 'tasks': [
+                {'task': int(f"{task.strip('t')}"), 'hours': quot} for task, quot in info['quots'].items()]} for datestr, info in final_schedule.items()]
+            # daysdeserializer = DaysSerializer(
+            #     data=new_schedule_reformated, many=True)
+            # if daysdeserializer.is_valid():
+            daysserializer.update(days, new_schedule_reformated)
             # process the data in form.cleaned_data as required
             # ...
             # redirect to a new URL:
@@ -135,7 +134,7 @@ def index(request):
 def schedule(request):
     if request.user.is_authenticated:
         if request.method == 'GET':
-            days = Days.objects.filter(tasks__task__user=request.user)
+            days = Days.objects.filter(tasks__task__user__user=request.user)
             daysserializer = DaysSerializer(days, many=True)
             result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
                       for day in daysserializer.data}

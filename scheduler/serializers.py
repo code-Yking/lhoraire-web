@@ -18,6 +18,7 @@ class DaysListSerializer(serializers.ListSerializer):
         # Perform creations and updates.
         ret = []
         for date, data in new_day_mapping.items():
+            # each day is seperately created/updated
             day = old_day_mapping.get(date, None)
             if day is None:
                 ret.append(self.child.create(data))
@@ -45,10 +46,12 @@ class DaysSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         new_tasks = validated_data.pop('tasks')
         # tasks = validated_data.pop('tasks')
-        created_tasks = Tasks.objects.create(
-            hours=new_tasks['hours'], task=TaskInfo.objects.get(task_name=new_tasks['task']))
-        days = Days.objects.create(tasks=created_tasks, **validated_data)
-        return days
+        day = Days.objects.create(**validated_data)
+        for task in new_tasks:
+            created_task = Tasks.objects.create(
+                hours=task['hours'], task=TaskInfo.objects.get(id=task['task']))
+            day.tasks.add(created_task)
+        return day
 
     def update(self, instance, validated_data):
         instance.date = validated_data.get('date', instance.date)
