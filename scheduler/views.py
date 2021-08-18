@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 import pytz
+import pprint
 
 from .forms import TaskForm, TaskModelFormSet
 
@@ -25,49 +26,94 @@ from rest_framework.response import Response
 
 @login_required
 def get_name(request):
-    # if this is a POST request we need to process the form data
     TaskFormSet = formset_factory(TaskForm, extra=1)
 
+    # if there was a POST in the form
     if request.method == 'POST':
-        # create a form instance and populate it with data from the request:
 
-        # new_task = TaskInfo(user=request.user)
+        formset = TaskFormSet(request.POST)         # collection of all forms
 
-        formset = TaskFormSet(request.POST)
-        # check whether it's valid:
+        # check whether the formset is valid:
         if formset.is_valid():
-            newtask_cumulation = {}
 
+            # getting the ONLY UserInfo obj of this user
+            userinfo = UserInfo.objects.filter(user=request.user).first()
+
+            # fetching old tasks in json/dict format for the backend to understand
             tasks = TaskInfo.objects.filter(user__user=request.user)
             taskinfoserializer = TaskInfoSerializer(tasks, many=True)
-            # result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
-            #           for day in daysserializer.data}
+
             oldtasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
                                            getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
 
-            for i, form in enumerate(formset.forms):
+            # getting timezone of the user, so as to prevent schedule miscalculations
+            timezone = pytz.common_timezones[userinfo.time_zone]
+            local_date = datetime.now(
+                pytz.timezone(timezone)).date()
+
+            # fetching new tasks from the forms
+            newtask_cumulation = {}
+
+            for form in formset:
                 obj = form.save(commit=False)
-
-                userinfo = UserInfo.objects.filter(user=request.user).first()
-                timezone = pytz.common_timezones[userinfo.time_zone]
-                t = datetime.now(
-                    pytz.timezone(timezone)).date()
-                print(timezone, t, datetime.now())
-
-                obj.modified_date = t
                 obj.user = userinfo
-
-                task = TaskModel(id=1, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
-                                 week_day_work=6, days=0, gradient=obj.gradient, today=getDateDelta(date.today()) + 1)
                 obj.save()
-                newtask_cumulation[(obj.id, obj.task_name,
+                # forming TaskModel using the form data for backend
+                task = TaskModel(id=obj.id, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
+                                 week_day_work=6, days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
+                newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
 
             print(newtask_cumulation)
 
-            newtasks = Filter(newtask_cumulation, oldtasks)
-            print('new: ', newtasks)
-            # process = Reposition(newtasks, (6, 10), (8, 14), {})
+            # filtering the new tasks and old tasks to know which all tasks to be included in the reschedule
+            new_tasks_filtered = Filter(newtask_cumulation, oldtasks)
+
+            # fetching existing schedule as json/dict, so that it can be used by backend
+            days = Days.objects.filter(tasks__task__user__user=request.user)
+            daysserializer = DaysSerializer(days, many=True)
+            exist_schedule_formated = {day['date']: {'quots': {task['task']: task['hours'] for task in day['tasks']}}
+                                       for day in daysserializer.data}
+
+            # performing backend schedule generation
+            process = Reposition(new_tasks_filtered, exist_schedule_formated,
+                                 oldtasks, (6, 10), (8, 14), {})
+
+            # results of backend
+            final_schedule = process.schedule       # schedule as dict
+            # task start_date and excess data (if any) as list
+            updated_tasks = process.worked_tasks()
+
+            # updated_tasks_data = [{'id': task, 'task_name': '', 'hours_needed': info[0], 'gradient': info[1],
+            #                        'start_date':info[2][0], 'due_date': info[2][1], 'modified_date': local_date} for task, info in updated_tasks.items()]
+
+            pprint.pprint(final_schedule)
+
+            new_schedule_reformated = [{'date': datestr, 'tasks': [
+                {'task': int(f"{task.strip('t')}"), 'hours': quot} for task, quot in info['quots'].items()]} for datestr, info in final_schedule.items()]
+            # daysdeserializer = DaysSerializer(
+            #     data=new_schedule_reformated, many=True)
+            # if daysdeserializer.is_valid():
+            daysserializer.update(days, new_schedule_reformated)
+
+            # saving the formset with the start date now available
+            # for form in formset:
+            #     obj = form.save(commit=False)
+            #     obj.save(start_date=updated_tasks[form.instance.pk]
+            #              [0], modified_date=local_date, user=userinfo)
+            #     updated_tasks.pop(form.instance.pk)
+
+            # updating the new and old tasks that were used with refreshed start dates
+            for task, data in updated_tasks.items():
+                taskobj = TaskInfo.objects.get(id=task)
+                taskobj.start_date = date.fromisoformat(
+                    getDatefromDelta(data[0]))
+                taskobj.modified_date = local_date
+                taskobj.save()
+
+            # taskinput = TaskInfoSerializer(updated_tasks_data, many=True)
+            # if taskinput.is_valid():
+            #     taskinput.save(user=userinfo)
 
             # process the data in form.cleaned_data as required
             # ...
@@ -78,7 +124,6 @@ def get_name(request):
     # if a GET (or any other method) we'll create a blank form
     else:
         formset = TaskFormSet()
-
     return render(request, 'scheduler/create.html', {'formset': formset})
 
 
