@@ -16,7 +16,7 @@
             {% for field in form %}
                 <div class="mb-3">
                     {{ field.errors }}
-                    <label class="form-label" for="" >{{field.label_tag}}</label>
+                    <label required class="form-label" for="" >{{field.label_tag}}</label>
                      {{ field }}
                 </div>
                 {% endfor %}
