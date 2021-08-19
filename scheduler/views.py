@@ -9,7 +9,7 @@ from django.shortcuts import render
 import pytz
 import pprint
 
-from .forms import TaskForm, TaskModelFormSet
+from .forms import TaskForm, TaskModelFormSet, UserInfoForm
 
 from scheduler.lhoraire_scheduler.model import TaskModel
 from scheduler.lhoraire_scheduler.reposition import Reposition
@@ -157,34 +157,41 @@ def index(request):
     schedule_query = Days.objects.filter(
         tasks__task__user__user=request.user).order_by('date')
 
-    # TODO earliest
+    if schedule_query.exists():
+        # TODO earliest
+        daysserializer = DaysSerializer(schedule_query, many=True)
+        schedule = {day['date']: {'quote': {f"t{task['task']}": task['hours'] for task in day['tasks']}}
+                    for day in daysserializer.data}
 
-    daysserializer = DaysSerializer(schedule_query, many=True)
-    schedule = {day['date']: {'quote': {f"t{task['task']}": task['hours'] for task in day['tasks']}}
-                for day in daysserializer.data}
+        latest = Days.objects.filter(
+            tasks__task__user__user=request.user).latest('date')
+        day_count = int((latest.date - date.today()).days) + 1
 
-    latest = Days.objects.filter(
-        tasks__task__user__user=request.user).latest('date')
-    day_count = int((latest.date - date.today()).days) + 1
+        for single_date in (date.today() + timedelta(n) for n in range(day_count)):
+            if single_date.strftime('%Y-%m-%d') not in list(schedule.keys()):
+                schedule[single_date.strftime(
+                    '%Y-%m-%d')] = {'quote': {'0': 0}}
 
-    for single_date in (date.today() + timedelta(n) for n in range(day_count)):
-        if single_date.strftime('%Y-%m-%d') not in list(schedule.keys()):
-            schedule[single_date.strftime('%Y-%m-%d')] = {'quote': {'0': 0}}
-
-    schedule = dict(sorted(schedule.items(),
-                           key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
-    pprint.pprint(schedule)
+        schedule = dict(sorted(schedule.items(),
+                               key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
+        pprint.pprint(schedule)
+    else:
+        schedule = {}
 
     tasks_query = TaskInfo.objects.filter(user__user=request.user)
-    taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
-    tasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
-                                getDateDelta(info['modified_date']), info['task_name'], info['color']] for info in taskinfoserializer.data}
+    if tasks_query.exists():
+        taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
-    # print(schedule_query)
-    user_query = UserInfo.objects.get(user=request.user)
-
+        tasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+                                    getDateDelta(info['modified_date']), info['task_name'], info['color']] for info in taskinfoserializer.data}
+        # print(schedule_query)
+    else:
+        tasks = {}
     taskformset = get_name(request=request)
+
+    user_query = UserInfo.objects.get(user=request.user)
+    # if user_query.exists():
 
     return render(request, 'scheduler/dashboard.html', {'schedule': schedule, 'tasks': tasks, 'formset': taskformset, 'userinfo': user_query})
 
@@ -212,3 +219,8 @@ def tasks(request):
             result = {info['id']: [float(info['hours_needed']), info['gradient'], [(info['start_date']), (info['due_date'])],
                                    (info['modified_date'])] for info in taskinfoserializer.data}
             return Response(result)
+
+
+@login_required
+def userinfo(request):
+    form = UserInfoForm
