@@ -58,12 +58,11 @@ def get_name(request):
 
     # if there was a POST in the form
     if request.method == 'POST':
-
         formset = TaskFormSet(request.POST)         # collection of all forms
 
         # check whether the formset is valid:
         if formset.is_valid():
-
+            print('1 IS PASSED')
             # getting the ONLY UserInfo obj of this user
             userinfo = UserInfo.objects.filter(user=request.user).first()
 
@@ -143,7 +142,7 @@ def get_name(request):
             daysserializer.update(days, new_schedule_reformated)
 
             # redirect to a new URL:
-            return HttpResponseRedirect('index')
+            return HttpResponseRedirect('/scheduler/')
 
     # if a GET (or any other method) we'll create a blank form
     else:
@@ -223,4 +222,13 @@ def tasks(request):
 
 @login_required
 def userinfo(request):
-    form = UserInfoForm
+    if request.method == 'POST':
+        form = UserInfoForm(request.POST)
+        if form.is_valid():
+            a = form.save(commit=False)
+            a.user = request.user
+            a.save()
+            return HttpResponseRedirect('')
+    else:
+        form = UserInfoForm()
+    return render(request, 'scheduler/user_info.html', {'form': form})

@@ -11,7 +11,7 @@ def signup_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('/scheduler')
+            return redirect('scheduler:userinfo')
     else:
         form = UserCreationForm()
     return render(request, 'accounts/signup.html', {'form': form})
@@ -30,6 +30,6 @@ def login_view(request):
 
 
 def logout_view(request):
-    if request.method == 'POST':
-        logout(request)
-        return redirect('/accounts/login')
+    # if request.method == 'POST':
+    logout(request)
+    return redirect('/accounts/login')

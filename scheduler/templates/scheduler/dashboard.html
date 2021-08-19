@@ -1,8 +1,8 @@
 {% extends "base_layout.html" %}
-
-{% block content %}
 {% load mathfilters %}
 
+
+{% block extrastyle %}
 <style>
 .schedule-graph {
   display: flex;
@@ -41,10 +41,13 @@
     font-size: 10px;
 }
 
+
 </style>
+{% endblock %}
 
 
-<body>
+{% block body %}
+<!-- <body> -->
     <h5>Hello {{ userinfo.user }}</h5>
 
     <div class="schedule-graph">
@@ -69,19 +72,55 @@
     </div>
     <input class="form-check-input" type="checkbox" value="" id="defaultCheck1"> Toggle Days
 
+    
+
+<!-- </body> -->
+{% endblock %}
+
+{% block extrascript %}
+    <script>
+        for (n of document.getElementsByClassName('column-bar')){
+            //     var colors = ['#ff0000', '#00ff00', '#0000ff'];
+            // var random_color = colors[Math.floor(Math.random() * colors.length)];
+            // n.style.background = random_color;
+            // var exampleEl = document.getElementsByClassName('column-bar')
+            var tooltip = new bootstrap.Tooltip(n, {boundary: document.body})
+        }
+        </script>
+{% endblock %}
+
+{% block create_modal %}
+    <!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+<div class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form action="{% url 'scheduler:create' %}" method="post">
+    <div class="modal-body">
+            {% csrf_token %}
+            {{ formset.management_form }}
+            {% for form in formset %}
+            {% for field in form %}
+            <div class="mb-3">
+                {{ field.errors }}
+                <label class="form-label" for="" >{{field.label_tag}}</label>
+                 {{ field }}
+            </div>
+            {% endfor %}
+            {% endfor %}
 
 
-<script>
-    for (n of document.getElementsByClassName('column-bar')){
-    //     var colors = ['#ff0000', '#00ff00', '#0000ff'];
-    // var random_color = colors[Math.floor(Math.random() * colors.length)];
-    // n.style.background = random_color;
-    // var exampleEl = document.getElementsByClassName('column-bar')
-    var tooltip = new bootstrap.Tooltip(n, {boundary: document.body})
-}
-</script>
-
-</body>
-
-
+            <!-- <input type="submit" value="Login"> -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Understood</button>
+        </div>
+    </form>
+  </div>
+</div>
+</div>
 {% endblock %}

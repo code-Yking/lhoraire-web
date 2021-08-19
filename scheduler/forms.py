@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm, fields
 from django.forms.models import modelformset_factory
 from django.forms.widgets import TextInput
-from .models import TaskInfo
+from .models import TaskInfo, UserInfo
 from django.forms import formset_factory
 
 
@@ -24,6 +24,16 @@ class TaskForm(ModelForm):
             'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics'}),
             'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '3'}),
             'gradient': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
+class UserInfoForm(ModelForm):
+    class Meta:
+        model = UserInfo
+        exclude = ['user']
+        widgets = {
+            'time_zone': forms.Select(attrs={'class': 'form-select'}),
+            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'})
         }
 
     # task_name = forms.CharField(label='Task Name', max_length=100)
