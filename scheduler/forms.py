@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import ModelForm, fields
 from django.forms.models import modelformset_factory
+from django.forms.widgets import TextInput
 from .models import TaskInfo
 from django.forms import formset_factory
 
@@ -19,6 +20,10 @@ class TaskForm(ModelForm):
         exclude = ['user', 'modified_date', 'start_date']
         widgets = {
             'due_date': DateInput(),
+            'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
+            'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics'}),
+            'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '3'}),
+            'gradient': forms.Select(attrs={'class': 'form-select'}),
         }
 
     # task_name = forms.CharField(label='Task Name', max_length=100)

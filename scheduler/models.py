@@ -35,10 +35,13 @@ class TaskInfo(models.Model):
     days_needed = models.DecimalField(
         decimal_places=2, max_digits=4, default=0, null=True)
 
-    gradient = models.CharField(max_length=1, null=True)
+    gradient = models.CharField(max_length=1, default='+', choices=(
+        ['+', 'Increasing'], ['-', 'Decreasing'], ['0', 'Roughly same']))
 
     modified_date = models.DateField(null=True)
     user = models.ForeignKey(UserInfo, on_delete=CASCADE, default="")
+
+    color = models.CharField(max_length=10)
 
     def __str__(self):
         return self.task_name

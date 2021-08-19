@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from math import floor
 from django.contrib.auth.decorators import login_required
 from django.forms.formsets import formset_factory
 from django.forms.models import modelformset_factory
@@ -22,6 +23,33 @@ from rest_framework.parsers import JSONParser
 from .models import Days, TaskInfo, UserInfo
 from .serializers import DaysSerializer, TaskInfoSerializer
 from rest_framework.response import Response
+from django.template.defaulttags import register
+
+WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+
+@register.filter
+def to_date(strdate):
+    return datetime.strptime(strdate, '%Y-%m-%d').strftime('%d/%m')
+
+
+@register.filter
+def to_day(strdate):
+    return WEEKDAYS[datetime.strptime(strdate, '%Y-%m-%d').weekday()]
+
+
+@register.filter
+def readable_hrs(hour):
+    hour = float(hour)
+    if floor(hour) == 0:
+        return str(round((hour - floor(hour)) * 60)) + " mins"
+    else:
+        return str(floor(hour)) + " hrs " + str(round((hour - floor(hour)) * 60)) + " mins"
 
 
 @login_required
@@ -110,31 +138,63 @@ def get_name(request):
 
             new_schedule_reformated = [{'date': datestr, 'tasks': [
                 {'task': int(f"{task.strip('t')}"), 'hours': quot} for task, quot in info['quots'].items()]} for datestr, info in final_schedule.items()]
-            # daysdeserializer = DaysSerializer(
-            #     data=new_schedule_reformated, many=True)
-            # if daysdeserializer.is_valid():
+
+            # updates days info
             daysserializer.update(days, new_schedule_reformated)
-            # process the data in form.cleaned_data as required
-            # ...
+
             # redirect to a new URL:
-            # print(formset.cleaned_data)
-            return HttpResponseRedirect('create')
+            return HttpResponseRedirect('index')
 
     # if a GET (or any other method) we'll create a blank form
     else:
-        formset = TaskFormSet()
-    return render(request, 'scheduler/create.html', {'formset': formset})
+        return TaskFormSet()
+    # return render(request, 'scheduler/create.html', {'formset': formset})
 
 
+@login_required
 def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
+
+    schedule_query = Days.objects.filter(
+        tasks__task__user__user=request.user).order_by('date')
+
+    # TODO earliest
+
+    daysserializer = DaysSerializer(schedule_query, many=True)
+    schedule = {day['date']: {'quote': {f"t{task['task']}": task['hours'] for task in day['tasks']}}
+                for day in daysserializer.data}
+
+    latest = Days.objects.filter(
+        tasks__task__user__user=request.user).latest('date')
+    day_count = int((latest.date - date.today()).days) + 1
+
+    for single_date in (date.today() + timedelta(n) for n in range(day_count)):
+        if single_date.strftime('%Y-%m-%d') not in list(schedule.keys()):
+            schedule[single_date.strftime('%Y-%m-%d')] = {'quote': {'0': 0}}
+
+    schedule = dict(sorted(schedule.items(),
+                           key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
+    pprint.pprint(schedule)
+
+    tasks_query = TaskInfo.objects.filter(user__user=request.user)
+    taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
+
+    tasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+                                getDateDelta(info['modified_date']), info['task_name'], info['color']] for info in taskinfoserializer.data}
+
+    # print(schedule_query)
+    user_query = UserInfo.objects.get(user=request.user)
+
+    taskformset = get_name(request=request)
+
+    return render(request, 'scheduler/dashboard.html', {'schedule': schedule, 'tasks': tasks, 'formset': taskformset, 'userinfo': user_query})
 
 
 @ api_view(['GET', 'POST'])
 def schedule(request):
     if request.user.is_authenticated:
         if request.method == 'GET':
-            days = Days.objects.filter(tasks__task__user__user=request.user)
+            days = Days.objects.filter(
+                tasks__task__user__user=request.user).order_by('date')
             daysserializer = DaysSerializer(days, many=True)
             result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
                       for day in daysserializer.data}
@@ -149,6 +209,6 @@ def tasks(request):
             taskinfoserializer = TaskInfoSerializer(tasks, many=True)
             # result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
             #           for day in daysserializer.data}
-            result = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])],
-                                         getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
+            result = {info['id']: [float(info['hours_needed']), info['gradient'], [(info['start_date']), (info['due_date'])],
+                                   (info['modified_date'])] for info in taskinfoserializer.data}
             return Response(result)

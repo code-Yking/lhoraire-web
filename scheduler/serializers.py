@@ -65,4 +65,4 @@ class TaskInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskInfo
         fields = ['id', 'task_name', 'hours_needed', 'start_date',
-                  'due_date', 'gradient', 'modified_date']
+                  'due_date', 'gradient', 'modified_date', 'color']
