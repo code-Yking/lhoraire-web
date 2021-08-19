@@ -21,8 +21,8 @@ class TaskForm(ModelForm):
         widgets = {
             'due_date': DateInput(),
             'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
-            'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics'}),
-            'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '3'}),
+            'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics', "required": "True"}),
+            'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '3', "required": "True"}),
             'gradient': forms.Select(attrs={'class': 'form-select'}),
         }
 

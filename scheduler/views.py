@@ -62,7 +62,7 @@ def get_name(request):
 
         # check whether the formset is valid:
         if formset.is_valid():
-            print('1 IS PASSED')
+            # print('1 IS PASSED')
             # getting the ONLY UserInfo obj of this user
             userinfo = UserInfo.objects.filter(user=request.user).first()
 
@@ -114,7 +114,7 @@ def get_name(request):
             # updated_tasks_data = [{'id': task, 'task_name': '', 'hours_needed': info[0], 'gradient': info[1],
             #                        'start_date':info[2][0], 'due_date': info[2][1], 'modified_date': local_date} for task, info in updated_tasks.items()]
 
-            pprint.pprint(final_schedule)
+            # pprint.pprint(final_schedule)
 
             # saving the formset with the start date now available
             # for form in formset:
@@ -173,7 +173,7 @@ def index(request):
 
         schedule = dict(sorted(schedule.items(),
                                key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
-        pprint.pprint(schedule)
+        # pprint.pprint(schedule)
     else:
         schedule = {}
 

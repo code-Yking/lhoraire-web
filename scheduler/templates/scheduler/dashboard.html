@@ -86,6 +86,12 @@
             // var exampleEl = document.getElementsByClassName('column-bar')
             var tooltip = new bootstrap.Tooltip(n, {boundary: document.body})
         }
+
+        PALLATE = ['#004d65', '#ff4013', '#5e30eb', '#cc0000']
+
+        $('.form-control-color').val(PALLATE[Math.floor(Math.random() * (PALLATE.length))]);
+        $('.form-control-color').trigger('change');
+
         </script>
 {% endblock %}
 
@@ -95,7 +101,7 @@
 <div class="modal-dialog">
   <div class="modal-content">
     <div class="modal-header">
-      <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+      <h5 class="modal-title" id="staticBackdropLabel">Create New Task</h5>
       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <form action="{% url 'scheduler:create' %}" method="post">
