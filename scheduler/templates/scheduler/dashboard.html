@@ -54,6 +54,9 @@ body, html{
 }
 
 </style>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
 {% endblock %}
 
 
@@ -113,11 +116,27 @@ body, html{
             // var exampleEl = document.getElementsByClassName('column-bar')
             var tooltip = new bootstrap.Tooltip(n, {boundary: document.body})
         }
-
+        
+        // random defualt color for the selector palatte
         PALLATE = ['#004d65', '#ff4013', '#5e30eb', '#cc0000']
 
-        $('.form-control-color').val(PALLATE[Math.floor(Math.random() * (PALLATE.length))]);
+        $('.form-control-color').val("#" + Math.floor(Math.random()*16777215).toString(16));
         $('.form-control-color').trigger('change');
+
+        // minimum input date of tomorrow
+        var today = new Date();
+        var dd = String(today.getDate() + 1).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+
+        tom = yyyy + '-' + mm + '-' + dd;
+        // $('.date-selector').attr('min',tom);
+
+        $(document).ready(function () {
+            $("#datepicker").datepicker({
+                minDate: 2,
+            });
+    });
 
         </script>
 {% endblock %}

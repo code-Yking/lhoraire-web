@@ -14,22 +14,32 @@ class DateInput(forms.DateInput):
 
 
 TaskModelFormSet = modelformset_factory(
-    TaskInfo, exclude=('user',), widgets={'due_date': DateInput()})
+    TaskInfo, exclude=('user',))
 
 
 class TaskForm(ModelForm):
-    due_date = forms.DateField(
-        widget=forms.DateInput(
-            format=('%d-%m-%Y'), attrs={"min": date.today().strftime("%Y-%m-%d")}))
+    # due_date = forms.DateTimeField(
+    #     input_formats=['%d/%m/%Y %H:%M'],
+    #     widget=forms.DateInput(
+    #         attrs={
+    #             'type': 'date',
+    #             'class': 'date-selector',
+    #             'id': 'datepicker'
+    #         },
+    #     ),
+    # )
 
     class Meta:
         model = TaskInfo
-        exclude = ['user', 'modified_date', 'start_date']
+        exclude = ['user', 'modified_date', 'start_date', 'days_needed']
         widgets = {
+            'due_date': TextInput(attrs={"id": "datepicker", "required": "True"}),
             'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
             'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics', "required": "True"}),
-            'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '3', "required": "True"}),
+            'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '2', "required": "True"}),
             'gradient': forms.Select(attrs={'class': 'form-select'}),
+            'hours_needed': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'required': 'True', 'step': 0.5}),
+            'days_needed': forms.TextInput(attrs={'class': 'form-control'})
         }
 
 
