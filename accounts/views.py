@@ -1,3 +1,4 @@
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
@@ -14,7 +15,7 @@ def signup_view(request):
             return redirect('scheduler:userinfo')
     else:
         form = UserCreationForm()
-    return render(request, 'accounts/signup.html', {'form': form})
+    return render(request, 'accounts/accounts.html', {'form': form})
 
 
 def login_view(request):
@@ -24,9 +25,11 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             return redirect('/scheduler')
+    elif request.user.is_authenticated:
+        return redirect('scheduler:index')
     else:
         form = AuthenticationForm()
-    return render(request, 'accounts/login.html', {'form': form})
+    return render(request, 'accounts/accounts.html', {'form': form})
 
 
 def logout_view(request):

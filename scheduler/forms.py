@@ -5,9 +5,12 @@ from django.forms.widgets import TextInput
 from .models import TaskInfo, UserInfo
 from django.forms import formset_factory
 
+from datetime import date
+
 
 class DateInput(forms.DateInput):
     input_type = 'date'
+    attrs = {"min": date.today().strftime("%Y-%m-%d")}
 
 
 TaskModelFormSet = modelformset_factory(
@@ -15,11 +18,14 @@ TaskModelFormSet = modelformset_factory(
 
 
 class TaskForm(ModelForm):
+    due_date = forms.DateField(
+        widget=forms.DateInput(
+            format=('%d-%m-%Y'), attrs={"min": date.today().strftime("%Y-%m-%d")}))
+
     class Meta:
         model = TaskInfo
         exclude = ['user', 'modified_date', 'start_date']
         widgets = {
-            'due_date': DateInput(),
             'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
             'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics', "required": "True"}),
             'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '3', "required": "True"}),
@@ -32,7 +38,7 @@ class UserInfoForm(ModelForm):
         model = UserInfo
         exclude = ['user']
         widgets = {
-            'time_zone': forms.Select(attrs={'class': 'form-select'}),
+            'time_zone': forms.Select(attrs={'class': 'form-select', 'id': 'time_zone_select'}),
             'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'})
         }
 

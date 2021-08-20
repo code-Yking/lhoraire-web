@@ -48,24 +48,32 @@ body, html{
     flex: 1;
 }
 
+.cards{
+    max-width:300px;
+    align-self: left;
+}
+
 </style>
 {% endblock %}
 
 
 {% block body %}
 <!-- <body> -->
-    <h5>Hello {{ userinfo.user }}</h5>
-
-    <div class="cards container">
+    
+    <div class="cards container-md">
+        <h6>{{ userinfo.user }}, your Todo list for today</h6>
         <ol class="list-group list-group-numbered">
+            {% for taskid, hours in todays_todo.items %}
+            {% with taskinfo=tasks|get_item:taskid %}
             <li class="list-group-item d-flex justify-content-between align-items-start">
               <div class="ms-2 me-auto">
-                <div class="fw-bold">Subheading</div>
-                Cras justo odio
+                <div class="fw-bold">{{taskinfo.5}}</div>
+                {{taskinfo.7}}
               </div>
-              <span class="badge bg-primary rounded-pill">14</span>
+              <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span>
             </li>
-            
+            {% endwith %}
+            {% endfor %}
           </ol>
     </div>
 
@@ -89,7 +97,7 @@ body, html{
         </div>
         {% endfor %}
     </div>
-    <input class="form-check-input" type="checkbox" value="" id="defaultCheck1"> Toggle Days
+    <!-- <input class="form-check-input" type="checkbox" value="" id="defaultCheck1"> Toggle Days -->
 
     
 
@@ -142,7 +150,7 @@ body, html{
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Understood</button>
+            <button type="submit" class="btn btn-primary">Add</button>
         </div>
     </form>
   </div>
