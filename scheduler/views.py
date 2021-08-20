@@ -228,7 +228,7 @@ def userinfo(request):
             a = form.save(commit=False)
             a.user = request.user
             a.save()
-            return HttpResponseRedirect('')
+            return HttpResponseRedirect('/scheduler/')
     else:
         form = UserInfoForm()
     return render(request, 'scheduler/user_info.html', {'form': form})
