@@ -185,10 +185,15 @@ def index(request):
                                key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
 
         # pprint.pprint(schedule)
-        todays_todo = schedule[local_date.strftime('%Y-%m-%d')]['quote']
+
+        last_day = list(schedule.keys())[-1]
+
+        todays_todo = schedule[local_date.strftime(
+            '%Y-%m-%d')]['quote'] if schedule[local_date.strftime('%Y-%m-%d')]['quote'] != {'0': 0} else {}
     else:
         schedule = {}
         todays_todo = {}
+        last_day = 0
 
     tasks_query = TaskInfo.objects.filter(user__user=request.user)
 
@@ -204,7 +209,7 @@ def index(request):
 
     # if user_query.exists():
 
-    return render(request, 'scheduler/dashboard.html', {'schedule': schedule, 'tasks': tasks, 'formset': taskformset, 'userinfo': user_query, 'todays_todo': todays_todo})
+    return render(request, 'scheduler/dashboard.html', {'schedule': schedule, 'tasks': tasks, 'formset': taskformset, 'userinfo': user_query, 'todays_todo': todays_todo, 'last_day': last_day})
 
 
 @ api_view(['GET', 'POST'])

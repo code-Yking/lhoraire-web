@@ -29,11 +29,13 @@ body{
              {{ field }}
         </div>
         {% endfor %}
+        {% if request.path == '/accounts/login' %}
         <button type="submit" class="btn btn-outline-primary">Login</button>
     </form>
-    {% if request.path == '/accounts/login' %}
     <a href="/accounts/signup">Or Sign up here</a>
     {% elif request.path == '/accounts/signup' %}
+    <button type="submit" class="btn btn-outline-primary">Signup</button>
+    </form>
     <a href="/accounts/login">Or login here</a>
     {% endif %}
 </div>

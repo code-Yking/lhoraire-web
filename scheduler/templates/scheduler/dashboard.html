@@ -27,11 +27,11 @@
   justify-content: flex-end;
   border-radius: 5px;
   width: 50px;
+  border-right: 1px solid white;
 }
 
 .column-bar {
     display: flex;
-  border-right: 1px solid white;
   flex-direction: column;
   align-items: center;
   /* justify-content: center; */
@@ -62,8 +62,9 @@ body, html{
 
 {% block body %}
 <!-- <body> -->
-    
+    {% if todays_todo %}
     <div class="cards container-md">
+        <!-- {{todays_todo}} -->
         <h6>{{ userinfo.user }}, your Todo list for today</h6>
         <ol class="list-group list-group-numbered">
             {% for taskid, hours in todays_todo.items %}
@@ -79,6 +80,7 @@ body, html{
             {% endfor %}
           </ol>
     </div>
+    {% endif %}
 
     <div class="schedule-graph">
         {% for day, data in schedule.items %}
@@ -110,34 +112,45 @@ body, html{
 {% block extrascript %}
     <script>
         for (n of document.getElementsByClassName('column-bar')){
-            //     var colors = ['#ff0000', '#00ff00', '#0000ff'];
-            // var random_color = colors[Math.floor(Math.random() * colors.length)];
-            // n.style.background = random_color;
-            // var exampleEl = document.getElementsByClassName('column-bar')
             var tooltip = new bootstrap.Tooltip(n, {boundary: document.body})
         }
         
-        // random defualt color for the selector palatte
-        PALLATE = ['#004d65', '#ff4013', '#5e30eb', '#cc0000']
+        var latestDate = new Date('{{ last_day }}')
+        const days_week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-        $('.form-control-color').val("#" + Math.floor(Math.random()*16777215).toString(16));
-        $('.form-control-color').trigger('change');
+        const columnContainerCount = (elem) => {
+            var win = $(elem);
+            var width = win.width()
 
-        // minimum input date of tomorrow
-        var today = new Date();
-        var dd = String(today.getDate() + 1).padStart(2, '0');
-        var mm = String(today.getMonth() + 1).padStart(2, '0');
-        var yyyy = today.getFullYear();
+            var no_of_col_req = Math.floor(width/50)
+            var no_of_col = $('.column-container').length
 
-        tom = yyyy + '-' + mm + '-' + dd;
-        // $('.date-selector').attr('min',tom);
+            // alert(no_of_col_req + " " +  no_of_col)
 
+            if (no_of_col_req - no_of_col > 0 )
+            for (n of Array(no_of_col_req - no_of_col).keys()){
+                latestDate.setDate(latestDate.getDate()+1)
+                $('.schedule-graph').append("<div class=\"column-container\"> <div class=\"column-bar\" style=\"flex-grow: 1;\"><span class=\"day-month-text\">"+days_week[latestDate.getDay()]+"</span></div> <div class=\"column-bar\"><span class=\"day-month-text\">"+('0' + latestDate.getDate()).slice(-2)+'/'+('0' + latestDate.getMonth()).slice(-2)+"</span></div></div>")
+        }
+        }
+        
         $(document).ready(function () {
+            // random defualt color for the selector palatte
+            // PALLATE = ['#004d65', '#ff4013', '#5e30eb', '#cc0000']
+            columnContainerCount(this)
+            $('.form-control-color').val("#" + Math.floor(Math.random()*16777215).toString(16));
+            $('.form-control-color').trigger('change');
+
+            // minimum input date of tomorrow
             $("#datepicker").datepicker({
                 minDate: 2,
             });
     });
 
+    $(window).on('resize', function(){
+        columnContainerCount(this)
+    });
+    
         </script>
 {% endblock %}
 
