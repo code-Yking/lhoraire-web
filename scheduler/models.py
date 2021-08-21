@@ -26,12 +26,13 @@ class UserInfo(models.Model):
 
 class TaskInfo(models.Model):
     task_name = models.CharField(max_length=50)
-    task_description = models.TextField()
+    task_description = models.TextField(null=True)
 
     start_date = models.DateField(null=True)
     due_date = models.DateField()
 
-    hours_needed = models.DecimalField(decimal_places=2, max_digits=4)
+    hours_needed = models.DecimalField(
+        decimal_places=2, max_digits=4, default=10)
     days_needed = models.DecimalField(
         decimal_places=2, max_digits=4, default=0, null=True)
 

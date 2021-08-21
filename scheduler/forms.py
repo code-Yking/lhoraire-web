@@ -18,16 +18,7 @@ TaskModelFormSet = modelformset_factory(
 
 
 class TaskForm(ModelForm):
-    # due_date = forms.DateTimeField(
-    #     input_formats=['%d/%m/%Y %H:%M'],
-    #     widget=forms.DateInput(
-    #         attrs={
-    #             'type': 'date',
-    #             'class': 'date-selector',
-    #             'id': 'datepicker'
-    #         },
-    #     ),
-    # )
+    default_data = {}
 
     class Meta:
         model = TaskInfo
@@ -49,7 +40,16 @@ class UserInfoForm(ModelForm):
         exclude = ['user']
         widgets = {
             'time_zone': forms.Select(attrs={'class': 'form-select', 'id': 'time_zone_select'}),
-            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'})
+            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
+            'max_week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
+            'week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
+            'max_week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'})
+        }
+        labels = {
+            'week_day_work': "No of Hours you can spend on a Weekday",
+            'max_week_day_work': "Upper limit of Hours you can spend on a Weekday",
+            'week_end_work': "No of Hours you can spend on a Weekend day",
+            'max_week_end_work': "Upper limit of Hours you can spend on a Weekend day",
         }
 
     # task_name = forms.CharField(label='Task Name', max_length=100)
