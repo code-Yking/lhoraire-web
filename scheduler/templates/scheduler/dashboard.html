@@ -91,7 +91,7 @@ body, html{
             <!-- {{ day }}  -->
             {% for task, hours in data.quote.items %}
                 {% with taskinfo=tasks|get_item:task %}
-                <div class="column-bar rounded-1" id="bar" style="flex-basis: {{ hours|div:userinfo.max_week_end_work|mul:100 }}%; background:{{ taskinfo.6 }}"
+                <div class="column-bar rounded-1" id="bar" style="flex-basis: {{ hours|div:upper_limit|mul:100 }}%; background:{{ taskinfo.6 }}"
                 data-bs-toggle="tooltip" data-bs-placement="top" title="{{ taskinfo.5 }}, {{ hours|readable_hrs }}"></div>
                 {% endwith %}
                 <!-- {{ task }} : {{ hours }} -->
@@ -115,7 +115,13 @@ body, html{
             var tooltip = new bootstrap.Tooltip(n, {boundary: document.body})
         }
         
+        if ('{{ last_day }}' != '0')
         var latestDate = new Date('{{ last_day }}')
+        else{
+            var latestDate = new Date()
+            latestDate.setDate(latestDate.getDate() -1)
+            latestDate.toDateString()
+        }
         const days_week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
         const columnContainerCount = (elem) => {
@@ -130,7 +136,7 @@ body, html{
             if (no_of_col_req - no_of_col > 0 )
             for (n of Array(no_of_col_req - no_of_col).keys()){
                 latestDate.setDate(latestDate.getDate()+1)
-                $('.schedule-graph').append("<div class=\"column-container\"> <div class=\"column-bar\" style=\"flex-grow: 1;\"><span class=\"day-month-text\">"+days_week[latestDate.getDay()]+"</span></div> <div class=\"column-bar\"><span class=\"day-month-text\">"+('0' + latestDate.getDate()).slice(-2)+'/'+('0' + latestDate.getMonth()).slice(-2)+"</span></div></div>")
+                $('.schedule-graph').append("<div class=\"column-container\"> <div class=\"column-bar\" style=\"flex-grow: 1;\"><span class=\"day-month-text\">"+days_week[latestDate.getDay()]+"</span></div> <div class=\"column-bar\"><span class=\"day-month-text\">"+('0' + latestDate.getDate()).slice(-2)+'/'+('0' + (latestDate.getMonth()+1) ).slice(-2)+"</span></div></div>")
         }
         }
         
@@ -144,6 +150,7 @@ body, html{
             // minimum input date of tomorrow
             $("#datepicker").datepicker({
                 minDate: 2,
+                maxDate: '+3M'
             });
     });
 
