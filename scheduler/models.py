@@ -58,7 +58,10 @@ class Tasks(models.Model):
 
 class Days(models.Model):
     date = models.DateField()
-    tasks = models.ManyToManyField(Tasks)
+    # tasks = models.ManyToManyField(Tasks)
+
+    tasks_jsonDump = models.CharField(max_length=481)
+    user = models.ForeignKey(UserInfo, on_delete=CASCADE, default="")
 
     def __str__(self):
         return f'{self.date}'
