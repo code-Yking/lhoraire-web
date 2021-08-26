@@ -1,4 +1,6 @@
+import json
 from rest_framework import serializers
+from rest_framework.fields import CurrentUserDefault
 
 from .models import TaskInfo, Tasks, Days
 
@@ -34,28 +36,32 @@ class DaysListSerializer(serializers.ListSerializer):
 
 
 class DaysSerializer(serializers.ModelSerializer):
-    tasks = TasksSerializer(many=True)
+    # tasks = TasksSerializer(many=True)
     # id = serializers.IntegerField()
 
     class Meta:
         list_serializer_class = DaysListSerializer
         model = Days
-        fields = ['date', 'tasks']
+        fields = ['date', 'tasks_jsonDump']
         # depth = 2
 
     def create(self, validated_data):
-        new_tasks = validated_data.pop('tasks')
+        new_tasks = validated_data.pop('tasks_jsonDump')
         # tasks = validated_data.pop('tasks')
-        day = Days.objects.create(**validated_data)
-        for task in new_tasks:
-            created_task = Tasks.objects.create(
-                hours=task['hours'], task=TaskInfo.objects.get(id=task['task']))
-            day.tasks.add(created_task)
+        tasks_jsonDump = json.dumps(new_tasks)
+
+        day = Days.objects.create(
+            date=validated_data['date'], tasks_jsonDump=tasks_jsonDump, user=validated_data['user'])
+        # for task in new_tasks:
+        #     created_task = Tasks.objects.create(
+        #         hours=task['hours'], task=TaskInfo.objects.get(id=task['task']))
+        #     day.tasks.add(created_task)
         return day
 
     def update(self, instance, validated_data):
         instance.date = validated_data.get('date', instance.date)
-        instance.tasks = validated_data.get('tasks', instance.tasks)
+        instance.tasks_jsonDump = validated_data.get(
+            'tasks_jsonDump', instance.tasks)
         # instance.created = validated_data.get('created', instance.created)
         instance.save()
         return instance
