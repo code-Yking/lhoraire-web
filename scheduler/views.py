@@ -71,14 +71,14 @@ def get_name(request):
         if formset.is_valid():
             # print('1 IS PASSED')
             # getting the ONLY UserInfo obj of this user
-            userinfo = UserInfo.objects.filter(user=request.user).first()
+            userinfo = UserInfo.objects.get(user=request.user)
 
             # fetching old tasks in json/dict format for the backend to understand
             tasks = TaskInfo.objects.filter(user__user=request.user)
             taskinfoserializer = TaskInfoSerializer(tasks, many=True)
 
-            oldtasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
-                                           getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
+            oldtasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+                                          getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
 
             # getting timezone of the user, so as to prevent schedule miscalculations
             local_date = get_local_date(userinfo)
@@ -96,20 +96,21 @@ def get_name(request):
                 newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
 
-            print(newtask_cumulation)
+            # print('newtask:    ', newtask_cumulation)
 
             # filtering the new tasks and old tasks to know which all tasks to be included in the reschedule
             new_tasks_filtered = Filter(newtask_cumulation, oldtasks)
 
             # fetching existing schedule as json/dict, so that it can be used by backend
-            days = Days.objects.filter(tasks__task__user__user=request.user)
+            days = Days.objects.filter(user__user=request.user)
             daysserializer = DaysSerializer(days, many=True)
-            exist_schedule_formated = {day['date']: {'quots': {f"t{task['task']}": float(task['hours']) for task in day['tasks']}}
+            exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items()}}
                                        for day in daysserializer.data}
 
+            # print('EXIST:   ', exist_schedule_formated)
             # performing backend schedule generation
             process = Reposition(new_tasks_filtered, exist_schedule_formated,
-                                 oldtasks, (6, 10), (8, 14), {})
+                                 oldtasks, (userinfo.week_day_work, userinfo.max_week_day_work), (userinfo.week_end_work, userinfo.max_week_end_work), {})
 
             # results of backend
             final_schedule = process.schedule       # schedule as dict
@@ -140,8 +141,8 @@ def get_name(request):
             # if taskinput.is_valid():
             #     taskinput.save(user=userinfo)
 
-            new_schedule_reformated = [{'date': datestr, 'tasks': [
-                {'task': int(f"{task.strip('t')}"), 'hours': quot} for task, quot in info['quots'].items()]} for datestr, info in final_schedule.items()]
+            new_schedule_reformated = [
+                {'date': datestr, 'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()}, 'user': userinfo} for datestr, info in final_schedule.items()]
 
             # updates days info
             daysserializer.update(days, new_schedule_reformated)
@@ -164,16 +165,17 @@ def index(request):
     local_date = get_local_date(user_query)
 
     schedule_query = Days.objects.filter(
-        tasks__task__user__user=request.user).order_by('date')
+        user__user=request.user).order_by('date')
 
+    # print('SCHEDULE QUERY', schedule_query)
     if schedule_query.exists():
         # TODO earliest
         daysserializer = DaysSerializer(schedule_query, many=True)
-        schedule = {day['date']: {'quote': {f"t{task['task']}": task['hours'] for task in day['tasks']}}
+        schedule = {day['date']: {'quote': json.loads(day['tasks_jsonDump'])}
                     for day in daysserializer.data}
 
         latest = Days.objects.filter(
-            tasks__task__user__user=request.user).latest('date')
+            user__user=request.user).latest('date')
         day_count = int((latest.date - local_date).days) + 1
 
         for single_date in (local_date + timedelta(n) for n in range(day_count)):
@@ -196,20 +198,29 @@ def index(request):
         last_day = 0
 
     tasks_query = TaskInfo.objects.filter(user__user=request.user)
-
+    # print("TASKS", tasks_query)
     if tasks_query.exists():
         taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
-        tasks = {f"t{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
-                                    getDateDelta(info['modified_date']), info['task_name'], info['color'], info['task_description']] for info in taskinfoserializer.data}
-        # print(schedule_query)
+        tasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+                                   getDateDelta(info['modified_date']), info['task_name'], info['color'], info['task_description']] for info in taskinfoserializer.data}
+        # print(tasks)
     else:
         tasks = {}
+
     taskformset = get_name(request=request)
 
     # if user_query.exists():
 
-    return render(request, 'scheduler/dashboard.html', {'schedule': schedule, 'tasks': tasks, 'formset': taskformset, 'userinfo': user_query, 'todays_todo': todays_todo, 'last_day': last_day})
+    return render(request, 'scheduler/dashboard.html', {
+        'schedule': schedule,
+        'tasks': tasks,
+        'formset': taskformset,
+        'userinfo': user_query,
+        'todays_todo': todays_todo,
+        'last_day': last_day,
+        'upper_limit': user_query.max_week_end_work if user_query.max_week_end_work > user_query.max_week_day_work else user_query.max_week_day_work
+    })
 
 
 @ api_view(['GET', 'POST'])
@@ -219,7 +230,7 @@ def schedule(request):
             days = Days.objects.filter(
                 tasks__task__user__user=request.user).order_by('date')
             daysserializer = DaysSerializer(days, many=True)
-            result = {(day['date']): {'quote': {task['task']: task['hours'] for task in day['tasks']}, 'date': getDateDelta(day['date'])}
+            result = {(day['date']): {'quote': {task['task']: task['hours'] for task in day['tasks_jsonDump']}, 'date': getDateDelta(day['date'])}
                       for day in daysserializer.data}
             return Response(result)
 
