@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect
 import pytz
 import pprint
 
-from .forms import TaskForm, TaskModelFormSet, UserInfoForm
+from .forms import TaskForm, UserInfoForm
 
 from scheduler.lhoraire_scheduler.model import TaskModel
 from scheduler.lhoraire_scheduler.reposition import Reposition
@@ -59,7 +59,7 @@ def get_local_date(userinfo):
     return local_date
 
 
-@login_required
+@login_required(login_url='/accounts/login/')
 def get_name(request):
     TaskFormSet = formset_factory(TaskForm, extra=1)
 
@@ -110,24 +110,14 @@ def get_name(request):
             # print('EXIST:   ', exist_schedule_formated)
             # performing backend schedule generation
             process = Reposition(new_tasks_filtered, exist_schedule_formated,
-                                 oldtasks, (userinfo.week_day_work, userinfo.max_week_day_work), (userinfo.week_end_work, userinfo.max_week_end_work), {})
+                                 oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), {}, local_date)
 
             # results of backend
             final_schedule = process.schedule       # schedule as dict
             # task start_date and excess data (if any) as list
             updated_tasks = process.worked_tasks()
 
-            # updated_tasks_data = [{'id': task, 'task_name': '', 'hours_needed': info[0], 'gradient': info[1],
-            #                        'start_date':info[2][0], 'due_date': info[2][1], 'modified_date': local_date} for task, info in updated_tasks.items()]
-
-            # pprint.pprint(final_schedule)
-
-            # saving the formset with the start date now available
-            # for form in formset:
-            #     obj = form.save(commit=False)
-            #     obj.save(start_date=updated_tasks[form.instance.pk]
-            #              [0], modified_date=local_date, user=userinfo)
-            #     updated_tasks.pop(form.instance.pk)
+            pprint.pprint(final_schedule)
 
             # updating the new and old tasks that were used with refreshed start dates
             for task, data in updated_tasks.items():
@@ -136,10 +126,6 @@ def get_name(request):
                     getDatefromDelta(data[0]))
                 taskobj.modified_date = local_date
                 taskobj.save()
-
-            # taskinput = TaskInfoSerializer(updated_tasks_data, many=True)
-            # if taskinput.is_valid():
-            #     taskinput.save(user=userinfo)
 
             new_schedule_reformated = [
                 {'date': datestr, 'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()}, 'user': userinfo} for datestr, info in final_schedule.items()]
@@ -156,7 +142,7 @@ def get_name(request):
     # return render(request, 'scheduler/create.html', {'formset': formset})
 
 
-@login_required
+@login_required(login_url='/accounts/login/')
 def index(request):
     if not UserInfo.objects.filter(user=request.user).exists():
         return redirect('/scheduler/initial-info')
@@ -178,7 +164,7 @@ def index(request):
             user__user=request.user).latest('date')
         day_count = int((latest.date - local_date).days) + 1
 
-        for single_date in (local_date + timedelta(n) for n in range(day_count)):
+        for single_date in (local_date + timedelta(n-1) for n in range(day_count)):
             if single_date.strftime('%Y-%m-%d') not in list(schedule.keys()):
                 schedule[single_date.strftime(
                     '%Y-%m-%d')] = {'quote': {'0': 0}}
@@ -223,14 +209,25 @@ def index(request):
     })
 
 
+@login_required
+def edit_tasks(request):
+    TaskModelFormSet = modelformset_factory(
+        TaskInfo, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed'))
+
+    formset = TaskModelFormSet(
+        queryset=TaskInfo.objects.filter(user__user=request.user))
+
+    return render(request, 'scheduler/edit.html', {'formset': formset})
+
+
 @ api_view(['GET', 'POST'])
 def schedule(request):
     if request.user.is_authenticated:
         if request.method == 'GET':
             days = Days.objects.filter(
-                tasks__task__user__user=request.user).order_by('date')
+                user__user=request.user).order_by('date')
             daysserializer = DaysSerializer(days, many=True)
-            result = {(day['date']): {'quote': {task['task']: task['hours'] for task in day['tasks_jsonDump']}, 'date': getDateDelta(day['date'])}
+            result = {(day['date']): {'quote': {task: quotes for task, quotes in json.loads(day['tasks_jsonDump']).items()}, 'date': getDateDelta(day['date'])}
                       for day in daysserializer.data}
             return Response(result)
 
