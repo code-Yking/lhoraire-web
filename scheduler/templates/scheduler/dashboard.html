@@ -87,7 +87,7 @@ body, html{
             {% with taskinfo=tasks|get_item:task %}
             
                 <div class="column-bar rounded-1" id="bar" style="flex-basis: {{ hours|div:upper_limit|mul:100 }}%; background:{{ taskinfo.6 }}"
-                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ task }}, {{ hours|readable_hrs }}">
+                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ taskinfo.5 }}, {{ hours|readable_hrs }}">
                 <div style="width:100%; height:100%;" data-bs-toggle="modal" data-bs-target="#task{{ task }}-{{day}}"></div>
             </div>
 
