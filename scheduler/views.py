@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 import pytz
 import pprint
+import decimal
 
 from .forms import TaskForm, UserInfoForm
 
@@ -93,7 +94,7 @@ def get_name(request):
                 obj.save()
                 # forming TaskModel using the form data for backend
                 task = TaskModel(id=obj.id, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
-                                 week_day_work=6, days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
+                                 week_day_work=float(userinfo.week_day_work), days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
                 newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
 
@@ -120,7 +121,8 @@ def get_name(request):
 
             final_to_reschedule = process.to_reschedule
 
-            pprint.pprint(final_schedule)
+            print('hey')
+            pprint.pprint(final_to_reschedule)
 
             # updating the new and old tasks that were used with refreshed start dates
             for task, data in updated_tasks.items():
@@ -146,6 +148,33 @@ def get_name(request):
     # return render(request, 'scheduler/create.html', {'formset': formset})
 
 
+def previous_days(earliest_day, user, local_date):
+    day_count = int(
+        (local_date - datetime.strptime(earliest_day, "%Y-%m-%d").date()).days)
+
+    for readonly_date in (local_date - timedelta(n) for n in range(day_count)):
+        print(readonly_date)
+        day_obj = Days.objects.filter(
+            user__user=user, date=readonly_date)
+
+        if day_obj.exists():
+            day_tasks = json.loads(day_obj[0]).tasks_jsonDump
+        # print(day_tasks)
+            for task, hours in day_tasks.items():
+                task_obj = TaskInfo.objects.filter(
+                    user__user=user, id=int(task))
+                if task_obj.exists():
+                    task = task_obj[0]
+                    print(task.modified_date - local_date)
+                    if (task.modified_date - local_date).days != 0:
+                        task.hours_needed -= decimal.Decimal(hours)
+                        task.modified_date = local_date
+                        task.save()
+
+        if (local_date - readonly_date).days > 2:
+            print('delete')
+
+
 @login_required(login_url='/accounts/login/')
 def index(request):
     if not UserInfo.objects.filter(user=request.user).exists():
@@ -158,34 +187,6 @@ def index(request):
         user__user=request.user).order_by('date')
 
     # print('SCHEDULE QUERY', schedule_query)
-    if schedule_query.exists():
-        # TODO earliest
-        daysserializer = DaysSerializer(schedule_query, many=True)
-        schedule = {day['date']: {'quote': json.loads(day['tasks_jsonDump'])}
-                    for day in daysserializer.data}
-
-        latest = Days.objects.filter(
-            user__user=request.user).latest('date')
-        day_count = int((latest.date - local_date).days) + 1
-
-        for single_date in (local_date + timedelta(n-1) for n in range(day_count)):
-            if single_date.strftime('%Y-%m-%d') not in list(schedule.keys()):
-                schedule[single_date.strftime(
-                    '%Y-%m-%d')] = {'quote': {'0': 0}}
-
-        schedule = dict(sorted(schedule.items(),
-                               key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
-
-        # pprint.pprint(schedule)
-
-        last_day = list(schedule.keys())[-1]
-
-        todays_todo = schedule[local_date.strftime(
-            '%Y-%m-%d')]['quote'] if schedule[local_date.strftime('%Y-%m-%d')]['quote'] != {'0': 0} else {}
-    else:
-        schedule = {}
-        todays_todo = {}
-        last_day = 0
 
     tasks_query = TaskInfo.objects.filter(user__user=request.user)
     # print("TASKS", tasks_query)
@@ -203,6 +204,37 @@ def index(request):
     taskformset = get_name(request=request)
 
     # if user_query.exists():
+    if schedule_query.exists():
+        daysserializer = DaysSerializer(schedule_query, many=True)
+        schedule = {day['date']: {'quote': {task: hours for task, hours in json.loads(day['tasks_jsonDump']).items() if task in tasks}}
+                    for day in daysserializer.data}
+
+        # TODO remove latest
+        latest = Days.objects.filter(
+            user__user=request.user).latest('date')
+
+        day_count = int((latest.date - local_date).days) + 1
+
+        for single_date in (local_date + timedelta(n-1) for n in range(day_count)):
+            if single_date.strftime('%Y-%m-%d') not in list(schedule.keys()):
+                schedule[single_date.strftime(
+                    '%Y-%m-%d')] = {'quote': {'0': 0}}
+
+        schedule = dict(sorted(schedule.items(),
+                               key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
+
+        # pprint.pprint(schedule)
+        earliest_day = list(schedule.keys())[0]
+        last_day = list(schedule.keys())[-1]
+
+        previous_days(earliest_day, request.user, local_date)
+
+        todays_todo = schedule[local_date.strftime(
+            '%Y-%m-%d')]['quote'] if schedule[local_date.strftime('%Y-%m-%d')]['quote'] != {'0': 0} else {}
+    else:
+        schedule = {}
+        todays_todo = {}
+        last_day = 0
 
     return render(request, 'scheduler/dashboard.html', {
         'schedule': schedule,
