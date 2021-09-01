@@ -28,6 +28,17 @@
   border-radius: 5px;
   width: 50px;
   border-right: 1px solid white;
+  position: relative;
+}
+
+{% if to_reschedule %}
+.column-container:hover > a {
+    display: block;
+}
+{% endif %}
+
+.column-container > a {
+    display: none;
 }
 
 .column-bar {
@@ -62,7 +73,9 @@ body, html{
 
 {% block body %}
 <!-- <body> -->
+    {% comment %}
     {% if todays_todo %}
+    {% endcomment %}
     <div class="cards container-md">
         <!-- {{todays_todo}} -->
         <h6>{{ userinfo.user }}, your Todo list for today</h6>
@@ -80,19 +93,44 @@ body, html{
             {% endfor %}
           </ol>
     </div>
+    {% comment %}
     {% endif %}
-
+    {% endcomment %}
     <div class="schedule-graph">
         {% for day, data in schedule.items %}
         <div class="column-container">
+            <a role="button" class="btn btn-outline-secondary" 
+            style="position:absolute; top: 10%; left: 50%; transform: translate(-50%, 0);">+</a>
             <div class="column-bar" style="flex-grow: 1;">
                 <span class="day-month-text">{{day|to_day}}</span>
             </div>
             <!-- {{ day }}  -->
             {% for task, hours in data.quote.items %}
-                {% with taskinfo=tasks|get_item:task %}
+            {% with taskinfo=tasks|get_item:task %}
+            
                 <div class="column-bar rounded-1" id="bar" style="flex-basis: {{ hours|div:upper_limit|mul:100 }}%; background:{{ taskinfo.6 }}"
-                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ taskinfo.5 }}, {{ hours|readable_hrs }}"></div>
+                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ task }}, {{ hours|readable_hrs }}">
+                <div style="width:100%; height:100%;" data-bs-toggle="modal" data-bs-target="#task{{ task }}-{{day}}"></div>
+            </div>
+
+            <!-- Modal -->
+<div class="modal fade" id="task{{task}}-{{day}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">{{taskinfo.5}}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Hours of work: {{ hours|readable_hrs }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Understood</button>
+        </div>
+      </div>
+    </div>
+  </div>
                 {% endwith %}
                 <!-- {{ task }} : {{ hours }} -->
             {% endfor %}
@@ -152,6 +190,8 @@ body, html{
                 minDate: 2,
                 maxDate: '+3M'
             });
+
+            $('.schedule-graph').children().eq(1).css('background-color','#C3E6FE');
     });
 
     $(window).on('resize', function(){
@@ -164,7 +204,7 @@ body, html{
 {% block create_modal %}
     <!-- Modal -->
 <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-<div class="modal-dialog">
+<div class="modal-dialog modal-dialog-scrollable">
   <div class="modal-content">
     <div class="modal-header">
       <h5 class="modal-title" id="staticBackdropLabel">Create New Task</h5>

@@ -39,6 +39,8 @@ class TaskInfo(models.Model):
     gradient = models.CharField(max_length=1, default='+', choices=(
         ['+', 'Increasing'], ['-', 'Decreasing'], ['0', 'Roughly same']))
 
+    to_reschedule = models.DecimalField(decimal_places=2, max_digits=4)
+
     modified_date = models.DateField(null=True)
     user = models.ForeignKey(UserInfo, on_delete=CASCADE, default="")
 

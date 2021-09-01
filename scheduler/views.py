@@ -89,6 +89,7 @@ def get_name(request):
             for form in formset:
                 obj = form.save(commit=False)
                 obj.user = userinfo
+                obj.to_reschedule = 0
                 obj.save()
                 # forming TaskModel using the form data for backend
                 task = TaskModel(id=obj.id, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
@@ -104,7 +105,7 @@ def get_name(request):
             # fetching existing schedule as json/dict, so that it can be used by backend
             days = Days.objects.filter(user__user=request.user)
             daysserializer = DaysSerializer(days, many=True)
-            exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items()}}
+            exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items() if n in oldtasks.keys()}}
                                        for day in daysserializer.data}
 
             # print('EXIST:   ', exist_schedule_formated)
@@ -117,6 +118,8 @@ def get_name(request):
             # task start_date and excess data (if any) as list
             updated_tasks = process.worked_tasks()
 
+            final_to_reschedule = process.to_reschedule
+
             pprint.pprint(final_schedule)
 
             # updating the new and old tasks that were used with refreshed start dates
@@ -125,6 +128,7 @@ def get_name(request):
                 taskobj.start_date = date.fromisoformat(
                     getDatefromDelta(data[0]))
                 taskobj.modified_date = local_date
+                taskobj.to_reschedule = final_to_reschedule.get(task, 0)
                 taskobj.save()
 
             new_schedule_reformated = [
@@ -188,12 +192,14 @@ def index(request):
     if tasks_query.exists():
         taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
-        tasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+        tasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], info['to_reschedule'],
                                    getDateDelta(info['modified_date']), info['task_name'], info['color'], info['task_description']] for info in taskinfoserializer.data}
         # print(tasks)
+        to_reschedule = {task: float(info[3])
+                         for task, info in tasks.items() if float(info[3]) != 0}
     else:
         tasks = {}
-
+        to_reschedule = {}
     taskformset = get_name(request=request)
 
     # if user_query.exists():
@@ -205,14 +211,15 @@ def index(request):
         'userinfo': user_query,
         'todays_todo': todays_todo,
         'last_day': last_day,
-        'upper_limit': user_query.max_week_end_work if user_query.max_week_end_work > user_query.max_week_day_work else user_query.max_week_day_work
+        'upper_limit': user_query.max_week_end_work if user_query.max_week_end_work > user_query.max_week_day_work else user_query.max_week_day_work,
+        'to_reschedule': to_reschedule
     })
 
 
 @login_required
 def edit_tasks(request):
     TaskModelFormSet = modelformset_factory(
-        TaskInfo, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed'))
+        TaskInfo, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed'), extra=0)
 
     formset = TaskModelFormSet(
         queryset=TaskInfo.objects.filter(user__user=request.user))

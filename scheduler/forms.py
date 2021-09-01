@@ -13,16 +13,13 @@ class DateInput(forms.DateInput):
     attrs = {"min": date.today().strftime("%Y-%m-%d")}
 
 
-TaskModelFormSet = modelformset_factory(
-    TaskInfo, exclude=('user',))
-
-
 class TaskForm(ModelForm):
     default_data = {}
 
     class Meta:
         model = TaskInfo
-        exclude = ['user', 'modified_date', 'start_date', 'days_needed']
+        exclude = ['user', 'modified_date',
+                   'start_date', 'days_needed', 'to_reschedule']
         widgets = {
             'due_date': TextInput(attrs={"id": "datepicker", "required": "True"}),
             'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
