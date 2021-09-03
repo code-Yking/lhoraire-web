@@ -10,7 +10,7 @@ import pytz
 import pprint
 import decimal
 
-from .forms import TaskForm, UserInfoForm
+from .forms import ReschedulerDateForm, TaskForm, UserInfoForm
 
 from scheduler.lhoraire_scheduler.model import TaskModel
 from scheduler.lhoraire_scheduler.reposition import Reposition
@@ -60,8 +60,98 @@ def get_local_date(userinfo):
     return local_date
 
 
+def get_old_tasks(request):
+    tasks = TaskInfo.objects.filter(user__user=request.user)
+
+    if len(tasks):
+        taskinfoserializer = TaskInfoSerializer(tasks, many=True)
+
+        oldtasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
+                                      getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
+    else:
+        oldtasks = {}
+    return oldtasks
+
+
+def get_old_schedule(request, oldtasks):
+    # fetching existing schedule as json/dict, so that it can be used by backend
+    days = Days.objects.filter(user__user=request.user)
+    daysserializer = DaysSerializer(days, many=True)
+    exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items() if n in oldtasks.keys()}}
+                               for day in daysserializer.data}
+
+    extra_hours = {getDateDelta(day['date']): day['extra_hours']
+                   for day in daysserializer.data}
+    return days, daysserializer, exist_schedule_formated, extra_hours
+
+
+def run_algorithm(exist_schedule_formated, userinfo, newtask_cumulation, oldtasks):
+    # filtering the new tasks and old tasks to know which all tasks to be included in the reschedule
+    new_tasks_filtered = Filter(newtask_cumulation, oldtasks)
+
+    # print('EXIST:   ', exist_schedule_formated)
+    # performing backend schedule generation
+    process = Reposition(new_tasks_filtered, exist_schedule_formated,
+                         oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), {}, local_date)
+
+    return process
+
+
+def update_db(updated_tasks, final_schedule, final_to_reschedule, daysserializer, days, local_date, userinfo, extrahours):
+    # updating the new and old tasks that were used with refreshed start dates
+    for task, data in updated_tasks.items():
+        taskobj = TaskInfo.objects.get(id=task)
+        taskobj.start_date = date.fromisoformat(
+            getDatefromDelta(data[0]))
+        taskobj.modified_date = local_date
+        taskobj.to_reschedule = final_to_reschedule.get(task, 0)
+        taskobj.save()
+
+    print(extrahours)
+    new_schedule_reformated = [
+        {'date': datestr, 'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()}, 'user': userinfo, 'extra_hours': extrahours.get(getDateDelta(datestr), 0)} for datestr, info in final_schedule.items()]
+    print(new_schedule_reformated)
+    # updates days info
+    daysserializer.update(days, new_schedule_reformated)
+
+
+def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_range={}):
+    local_date = get_local_date(userinfo)
+
+    if oldtasks == None:
+        oldtasks = get_old_tasks(request)
+    # getting existing schedule and activating the days serializer
+    days = get_old_schedule(request, oldtasks)[0]
+    daysserializer = get_old_schedule(request, oldtasks)[1]
+    exist_schedule_formated = get_old_schedule(request, oldtasks)[2]
+
+    extra_hours = get_old_schedule(request, oldtasks)[3]
+
+    man_reschedule = False
+    if reschedule_range:
+        man_reschedule = True
+
+    new_tasks_filtered = Filter(
+        newtask_cumulation, oldtasks, man_reschedule, reschedule_range)
+
+    # print('EXIST:   ', exist_schedule_formated)
+    # performing backend schedule generation
+    schedule = Reposition(new_tasks_filtered, exist_schedule_formated,
+                          oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), extra_hours, local_date)
+
+    # results of backend
+    final_schedule = schedule.schedule       # schedule as dict
+    # task start_date and excess data (if any) as list
+    updated_tasks = schedule.worked_tasks()
+
+    final_to_reschedule = schedule.to_reschedule
+
+    update_db(updated_tasks, final_schedule, final_to_reschedule,
+              daysserializer, days, local_date, userinfo, extra_hours)
+
+
 @login_required(login_url='/accounts/login/')
-def get_name(request):
+def get_name(request, internal=False):
     TaskFormSet = formset_factory(TaskForm, extra=1)
 
     # if there was a POST in the form
@@ -70,17 +160,12 @@ def get_name(request):
 
         # check whether the formset is valid:
         if formset.is_valid():
-            # print('1 IS PASSED')
+
             # getting the ONLY UserInfo obj of this user
             userinfo = UserInfo.objects.get(user=request.user)
 
             # fetching old tasks in json/dict format for the backend to understand
-            tasks = TaskInfo.objects.filter(user__user=request.user)
-            taskinfoserializer = TaskInfoSerializer(tasks, many=True)
-
-            oldtasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
-                                          getDateDelta(info['modified_date'])] for info in taskinfoserializer.data}
-
+            oldtasks = get_old_tasks(request)
             # getting timezone of the user, so as to prevent schedule miscalculations
             local_date = get_local_date(userinfo)
 
@@ -98,53 +183,17 @@ def get_name(request):
                 newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
 
-            # print('newtask:    ', newtask_cumulation)
-
-            # filtering the new tasks and old tasks to know which all tasks to be included in the reschedule
-            new_tasks_filtered = Filter(newtask_cumulation, oldtasks)
-
-            # fetching existing schedule as json/dict, so that it can be used by backend
-            days = Days.objects.filter(user__user=request.user)
-            daysserializer = DaysSerializer(days, many=True)
-            exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items() if n in oldtasks.keys()}}
-                                       for day in daysserializer.data}
-
-            # print('EXIST:   ', exist_schedule_formated)
-            # performing backend schedule generation
-            process = Reposition(new_tasks_filtered, exist_schedule_formated,
-                                 oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), {}, local_date)
-
-            # results of backend
-            final_schedule = process.schedule       # schedule as dict
-            # task start_date and excess data (if any) as list
-            updated_tasks = process.worked_tasks()
-
-            final_to_reschedule = process.to_reschedule
-
-            print('hey')
-            pprint.pprint(final_to_reschedule)
-
-            # updating the new and old tasks that were used with refreshed start dates
-            for task, data in updated_tasks.items():
-                taskobj = TaskInfo.objects.get(id=task)
-                taskobj.start_date = date.fromisoformat(
-                    getDatefromDelta(data[0]))
-                taskobj.modified_date = local_date
-                taskobj.to_reschedule = final_to_reschedule.get(task, 0)
-                taskobj.save()
-
-            new_schedule_reformated = [
-                {'date': datestr, 'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()}, 'user': userinfo} for datestr, info in final_schedule.items()]
-
-            # updates days info
-            daysserializer.update(days, new_schedule_reformated)
+            process(request, userinfo, oldtasks, newtask_cumulation)
 
             # redirect to a new URL:
             return HttpResponseRedirect('/scheduler/')
 
     # if a GET (or any other method) we'll create a blank form
     else:
-        return TaskFormSet()
+        if internal:
+            return TaskFormSet()
+        else:
+            return HttpResponseRedirect('/scheduler/')
     # return render(request, 'scheduler/create.html', {'formset': formset})
 
 
@@ -158,7 +207,7 @@ def previous_days(earliest_day, user, local_date):
             user__user=user, date=readonly_date)
 
         if day_obj.exists():
-            day_tasks = json.loads(day_obj[0]).tasks_jsonDump
+            day_tasks = json.loads(day_obj[0].tasks_jsonDump)
         # print(day_tasks)
             for task, hours in day_tasks.items():
                 task_obj = TaskInfo.objects.filter(
@@ -173,6 +222,36 @@ def previous_days(earliest_day, user, local_date):
 
         if (local_date - readonly_date).days > 2:
             print('delete')
+
+
+def rescheduler(request, internal=False):
+    # print(request.method)
+    if request.method == "POST":
+        form = ReschedulerDateForm(request.POST)
+        if form.is_valid():
+            userinfo = UserInfo.objects.get(user=request.user)
+            # from_date = form.cleaned_data['from_date']
+            extra_hours = form.cleaned_data['extra_hours']
+            reschedule_date = form.cleaned_data['date']
+            # print(date, hours)
+
+            day_obj = Days.objects.get(
+                user__user=request.user, date=date.fromisoformat(reschedule_date))
+            day_obj.extra_hours = extra_hours
+            day_obj.save()
+
+            process(request, userinfo, reschedule_range={
+                    "0": (getDateDelta(reschedule_date), getDateDelta(reschedule_date))})
+
+            return HttpResponseRedirect('/scheduler/')
+    else:
+        if internal:
+            print('yes')
+            return ReschedulerDateForm()
+        else:
+            return HttpResponseRedirect('/scheduler/')
+
+# TODO fix this
 
 
 @login_required(login_url='/accounts/login/')
@@ -201,12 +280,14 @@ def index(request):
     else:
         tasks = {}
         to_reschedule = {}
-    taskformset = get_name(request=request)
+
+    taskformset = get_name(request=request, internal=True)
+    rescheduleform = rescheduler(request=request, internal=True)
 
     # if user_query.exists():
     if schedule_query.exists():
         daysserializer = DaysSerializer(schedule_query, many=True)
-        schedule = {day['date']: {'quote': {task: hours for task, hours in json.loads(day['tasks_jsonDump']).items() if task in tasks}}
+        schedule = {day['date']: {'quote': {task: hours for task, hours in json.loads(day['tasks_jsonDump']).items() if task in tasks}, 'extra_hours': float(day['extra_hours'])}
                     for day in daysserializer.data}
 
         # TODO remove latest
@@ -244,7 +325,8 @@ def index(request):
         'todays_todo': todays_todo,
         'last_day': last_day,
         'upper_limit': user_query.max_week_end_work if user_query.max_week_end_work > user_query.max_week_day_work else user_query.max_week_day_work,
-        'to_reschedule': to_reschedule
+        'to_reschedule': to_reschedule,
+        'reschedule_form': rescheduleform
     })
 
 
