@@ -31,16 +31,20 @@
               {% if user.is_authenticated %}
               
               <a tabindex="0" role="button" class="btn btn-outline-secondary position-relative" style="margin-right: 20px;"
-              data-bs-toggle="popover" title="Unschedulable Tasks" data-bs-html="true" data-bs-content="
+              data-bs-toggle="popover" title="Unschedulable Tasks" data-bs-html="true" data-bs-sanitize="false" data-bs-content="
               {% if to_reschedule %}
-                {% for task, hours in to_reschedule.items %}
+              <div>
                 <ul class='list-group'>
+                  {% for task, hours in to_reschedule.items %}
+                  {% with taskinfo=tasks|get_item:task %}
                   <li class='list-group-item d-flex justify-content-between align-items-center'>
-                    {{task}}
+                    {{taskinfo.5}}
                     <span class='badge bg-primary rounded-pill'>{{ hours|readable_hrs }}</span>
                   </li>
+                  {% endwith %}
+                  {% endfor %}
                 </ul>
-                {% endfor %}
+              </div>
               {% else %}
               Tasks that are unshedulable because of the set limitatiosn will be found here
               {% endif %}
@@ -52,7 +56,7 @@
                 <span class="visually-hidden">New alerts</span>
               </span>
             </a>
-              <button class="btn btn-outline-primary me-2" type="button" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Add New Task</button>
+              <button class="btn btn-outline-primary me-2" type="button" data-bs-toggle="modal" data-bs-target="#createTask">Add New Task</button>
               {% endif %}
             </div>
           </nav>
@@ -66,10 +70,14 @@
         {% endblock %}
         <script>
           var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-  return new bootstrap.Popover(popoverTriggerEl)
-})
-
+          var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+          });
+        //   $(document).ready(function(){
+        //   $('a').click(()=>{
+        //     alert('hi')
+        //   })
+        // });
 // var popover = new bootstrap.Popover(document.querySelector('.popover-dismiss'), {
 //   trigger: 'focus'
 // })
