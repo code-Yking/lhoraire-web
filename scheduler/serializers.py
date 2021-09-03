@@ -42,7 +42,7 @@ class DaysSerializer(serializers.ModelSerializer):
     class Meta:
         list_serializer_class = DaysListSerializer
         model = Days
-        fields = ['date', 'tasks_jsonDump']
+        fields = ['date', 'tasks_jsonDump', 'extra_hours']
         # depth = 2
 
     def create(self, validated_data):
@@ -51,7 +51,7 @@ class DaysSerializer(serializers.ModelSerializer):
         tasks_jsonDump = json.dumps(new_tasks)
 
         day = Days.objects.create(
-            date=validated_data['date'], tasks_jsonDump=tasks_jsonDump, user=validated_data['user'])
+            date=validated_data['date'], tasks_jsonDump=tasks_jsonDump, user=validated_data['user'], extra_hours=validated_data['extra_hours'])
         # for task in new_tasks:
         #     created_task = Tasks.objects.create(
         #         hours=task['hours'], task=TaskInfo.objects.get(id=task['task']))
@@ -61,7 +61,9 @@ class DaysSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.date = validated_data.get('date', instance.date)
         instance.tasks_jsonDump = validated_data.get(
-            'tasks_jsonDump', instance.tasks)
+            'tasks_jsonDump', instance.tasks_jsonDump)
+        print(instance)
+        instance.extra_hours = instance.extra_hours
         # instance.created = validated_data.get('created', instance.created)
         instance.save()
         return instance

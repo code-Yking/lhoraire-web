@@ -10,5 +10,6 @@ urlpatterns = [
     path('tasks', views.tasks, name='tasks'),
     path('', views.index, name='index'),
     path('initial-info', views.userinfo, name='userinfo'),
-    path('edit', views.edit_tasks, name='edit')
+    path('edit', views.edit_tasks, name='edit'),
+    path('rescheduler', views.rescheduler, name='rescheduler')
 ]

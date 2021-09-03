@@ -65,5 +65,8 @@ class Days(models.Model):
     tasks_jsonDump = models.CharField(max_length=481)
     user = models.ForeignKey(UserInfo, on_delete=CASCADE, default="")
 
+    extra_hours = models.DecimalField(
+        decimal_places=2, max_digits=4, default=0)
+
     def __str__(self):
         return f'{self.date}'
