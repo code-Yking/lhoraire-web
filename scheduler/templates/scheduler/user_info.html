@@ -1,3 +1,4 @@
+{% load static %}
 <html>
     <head>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
@@ -8,7 +9,10 @@
     <body style="display: flex; flex-direction: column;">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">
-              <a class="navbar-brand" href="#">lhoraire</a>
+              <a class="navbar-brand" href="#">
+                <img src="{% static 'main/img/icon2.png' %}" alt="" width="30" height="30" class="d-inline-block align-text-top">
+                  lhoraire
+                </a>
             </div>
           </nav>
         <div class="container" style="width:600px; display: flex; flex:0 0 600; flex-direction: column; justify-content: center; margin-top: 20px;">

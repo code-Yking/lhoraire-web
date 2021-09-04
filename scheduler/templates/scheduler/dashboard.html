@@ -4,6 +4,17 @@
 
 {% block extrastyle %}
 <style>
+body, html{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+}
+
+body{
+  min-height: 100%;
+}
+
 .schedule-graph {
   display: flex;
   height: 50vh;
@@ -16,6 +27,8 @@
   /* max-width: 100%; */
     background-color: #f5f5f5;
     flex-grow: 1;
+    margin-top: auto;
+    margin-bottom: 20px;
 }
 
 .column-container {
@@ -31,11 +44,14 @@
   position: relative;
 }
 
+
+{% if to_reschedule %}
 .column-container:hover > .add-task {
     display: block;
 }
+{% endif %}
 
-.column-container > a {
+.column-container > .add-task {
     display: none;
 }
 
@@ -60,6 +76,9 @@ body, html{
 .cards{
     max-width:300px;
     align-self: left;
+    background-color: #f2f2f2;
+    padding: 50px;
+    border-radius: 10px;
 }
 
 </style>
@@ -71,13 +90,65 @@ body, html{
 
 {% block body %}
 <!-- <body> -->
-    
+  <div class="container" style="margin-top: 20px; display: flex;"> 
+    <div class="cards container-md">
+        <h6>Today's Todo List</h6>
+        {% if todays_todo %}
+        <ol class="list-group">
+            {% for taskid, hours in todays_todo.items %}
+            {% with taskinfo=tasks|get_item:taskid %}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+              <div class="ms-2 me-auto">
+                <div class="fw-bold">{{taskinfo.5}}</div>
+                <!-- {{taskinfo.7}} -->
+              </div>
+              <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span>
+            </li>
+            {% endwith %}
+            {% endfor %}
+          </ol>
+          {%else%}
+          <p>You don't have any work to be done today!</p>
+          {% endif%}
+    </div>
+
+    <div class="cards container-md">
+        <h6>Upcoming Due Dates</h6>
+        {% if todays_todo %}
+        <ol class="list-group">
+            {% for taskid, hours in todays_todo.items %}
+            {% with taskinfo=tasks|get_item:taskid %}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+              <div class="ms-2 me-auto">
+                <div class="fw-bold">{{taskinfo.5}}</div>
+                <!-- {{taskinfo.7}} -->
+              </div>
+              <!-- <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span> -->
+            </li>
+            {% endwith %}
+            {% endfor %}
+          </ol>
+          {%else%}
+          <p>Due dates in the next 10 days will be found here.</p>
+          {% endif%}
+    </div>
+</div>
+
     <div class="schedule-graph">
         {% for day, data in schedule.items %}
         <div class="column-container">
             <a role="button" class="btn btn-outline-secondary add-task" 
             style="position:absolute; top: 10%; left: 50%; transform: translate(-50%, 0);"
-            data-bs-toggle="modal" data-bs-target="#rescheduler-modal" data-bs-date="{{day}}" data-bs-extrahours="{{data.extra_hours}}">+</a>
+            data-bs-toggle="modal" data-bs-target="#rescheduler-modal" data-bs-date="{{day}}" data-bs-extrahours="{{data.extra_hours}}">
+            {% if data.extra_hours %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/>
+              </svg>
+            {% else %}
+            +
+            {% endif %}
+                
+            </a>
             <div class="column-bar" style="flex-grow: 1;">
                 <span class="day-month-text">{{day|to_day}}</span>
             </div>
@@ -127,49 +198,7 @@ body, html{
 
      <!-- Modal -->
 
-    <div class="container" style="margin-top: 20px; display: flex;"> 
-    <div class="cards container-md">
-        <h6>Today's Todo List</h6>
-        {% if todays_todo %}
-        <ol class="list-group">
-            {% for taskid, hours in todays_todo.items %}
-            {% with taskinfo=tasks|get_item:taskid %}
-            <li class="list-group-item d-flex justify-content-between align-items-start">
-              <div class="ms-2 me-auto">
-                <div class="fw-bold">{{taskinfo.5}}</div>
-                <!-- {{taskinfo.7}} -->
-              </div>
-              <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span>
-            </li>
-            {% endwith %}
-            {% endfor %}
-          </ol>
-          {%else%}
-          <p>You don't have any work to be done today!</p>
-          {% endif%}
-    </div>
-
-    <div class="cards container-md">
-        <h6>Upcoming Due Dates</h6>
-        {% if todays_todo %}
-        <ol class="list-group">
-            {% for taskid, hours in todays_todo.items %}
-            {% with taskinfo=tasks|get_item:taskid %}
-            <li class="list-group-item d-flex justify-content-between align-items-start">
-              <div class="ms-2 me-auto">
-                <div class="fw-bold">{{taskinfo.5}}</div>
-                <!-- {{taskinfo.7}} -->
-              </div>
-              <!-- <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span> -->
-            </li>
-            {% endwith %}
-            {% endfor %}
-          </ol>
-          {%else%}
-          <p>Due dates in the next 10 days will be found here.</p>
-          {% endif%}
-    </div>
-</div>
+    
     
 
 <!-- </body> -->
@@ -220,11 +249,21 @@ body, html{
             });
 
             $('.schedule-graph').children().eq(1).css('background-color','#C3E6FE');
+
+            
+            // graphMarginTop = parseFloat($('.schedule-graph').css("margin-top"))
+            footerHeight = $('.footer').outerHeight()
+            $('.footer').css("margin-bottom", -footerHeight)
+
+            $(window).on('resize', function(){
+              columnContainerCount(this);
+    
+                // alert(footerHeight)
+                // console.log(graphMarginTop + footerHeight)
+    
+            });
         });
 
-        $(window).on('resize', function(){
-            columnContainerCount(this)
-        });
 
         var exampleModal = document.getElementById('rescheduler-modal')
         exampleModal.addEventListener('show.bs.modal', function (event) {
