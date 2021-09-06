@@ -27,7 +27,7 @@ class TaskForm(ModelForm):
             'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics', "required": "True"}),
             'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '2', "required": "True"}),
             'gradient': forms.Select(attrs={'class': 'form-select'}),
-            'hours_needed': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'required': 'True', 'step': 0.5}),
+            'hours_needed': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'required': 'True', 'step': 0.5, 'min': "0"}),
             'days_needed': forms.TextInput(attrs={'class': 'form-control'})
         }
 
@@ -38,10 +38,10 @@ class UserInfoForm(ModelForm):
         exclude = ['user']
         widgets = {
             'time_zone': forms.Select(attrs={'class': 'form-select', 'id': 'time_zone_select'}),
-            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
-            'max_week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
-            'week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
-            'max_week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'})
+            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"}),
+            'max_week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"}),
+            'week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"}),
+            'max_week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"})
         }
         labels = {
             'week_day_work': "No of Hours you can spend on a Weekday",

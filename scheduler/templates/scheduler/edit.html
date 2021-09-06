@@ -2,10 +2,12 @@
 
 
 {% block body %}
-<div class="container-fluid" style="width:70%; margin-top:10px">
+<div class="container" style="margin-top:10px">
 
     <div class="alert alert-primary" role="alert">
-        You have {{formset|length}} tasks set. Here are the tasks in the ascending order of their due dates. Changes have to be saved by clicking the 'Save' button
+        <p>You have {{formset|length}} tasks set.
+        Here are the tasks in the ascending order of their due dates. Changes have to be saved by clicking the 'Save' button</p>
+        <span><i>Pro Tip: </i> To delete a task, reduce the hours needed down to 0</span>
       </div>
 
 <form action="{% url 'scheduler:edit' %}" method="post">
@@ -29,7 +31,6 @@
                              {{ field }}
                         </div>
                         {% endfor %}
-                        <button type="button" class="btn btn-outline-danger">Remove</button>
                         </div>
                     </div>
                   </div>
@@ -37,7 +38,7 @@
                 
             {% endfor %}
         </div>
-    <input type="submit" value="Save">
+        <button type="submit" class="btn btn-primary" style="margin: 20px;">Save</button>
 </form>
 </div>
 {% endblock %}

@@ -32,7 +32,7 @@ class TaskInfo(models.Model):
     due_date = models.DateField()
 
     hours_needed = models.DecimalField(
-        decimal_places=2, max_digits=4, default=10)
+        decimal_places=2, max_digits=5, default=10)
     days_needed = models.DecimalField(
         decimal_places=2, max_digits=4, default=0, null=True)
 

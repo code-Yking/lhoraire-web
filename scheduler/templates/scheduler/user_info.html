@@ -1,4 +1,7 @@
+
+{% extends 'base_layout.html' %}
 {% load static %}
+
 <html>
     <head>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
@@ -7,19 +10,26 @@
     </head>
 
     <body style="display: flex; flex-direction: column;">
+        {% block body %}
+        <!-- {% if not request.path == '/scheduler/settings' %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">
               <a class="navbar-brand" href="#">
-                <img src="{% static 'main/img/icon2.png' %}" alt="" width="30" height="30" class="d-inline-block align-text-top">
+                 <img src="{% static 'main/img/icon2.png' %}" alt="" width="30" height="30" class="d-inline-block align-text-top"> --/>
                   lhoraire
                 </a>
             </div>
           </nav>
-        <div class="container" style="width:600px; display: flex; flex:0 0 600; flex-direction: column; justify-content: center; margin-top: 20px;">
+        {% endif %} -->
+        <div class="container" style="display: flex; flex:0 0 600; flex-direction: column; justify-content: center; margin-top: 20px;">
+            {% if user_not_complete %}
             <div class="alert alert-success" role="alert">
                 Account has been successfully created!
               </div>
               <h4>Additional Information Required</h4>
+            {% else %}
+            <h4>Change Settings</h4>
+            {% endif %}
         <form action="initial-info" method="post">
             {% csrf_token %}
             {% for field in form %}
@@ -32,9 +42,11 @@
                 <button type="submit" class="btn btn-outline-primary">Save</button>
         </form>
     </div>
-
+    {% if user_not_complete %}
     <script>
         $('#time_zone_select option:contains(\"' + Intl.DateTimeFormat().resolvedOptions().timeZone + '\")').prop('selected', true)
     </script>
+    {% endif %}
+    {%endblock%}
     </body>
 </html>

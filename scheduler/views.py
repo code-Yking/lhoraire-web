@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from math import floor
+from django import forms
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.forms.formsets import formset_factory
 from django.forms.models import modelformset_factory
 from django.http import HttpResponse
@@ -160,7 +162,6 @@ def get_name(request, internal=False):
 
         # check whether the formset is valid:
         if formset.is_valid():
-
             # getting the ONLY UserInfo obj of this user
             userinfo = UserInfo.objects.get(user=request.user)
 
@@ -182,11 +183,12 @@ def get_name(request, internal=False):
                                  week_day_work=float(userinfo.week_day_work), days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
                 newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
-
             process(request, userinfo, oldtasks, newtask_cumulation)
 
+        else:
+            messages.error(request, formset.errors)
             # redirect to a new URL:
-            return HttpResponseRedirect('/scheduler/')
+        return HttpResponseRedirect('/scheduler/')
 
     # if a GET (or any other method) we'll create a blank form
     else:
@@ -333,12 +335,50 @@ def index(request):
 @login_required
 def edit_tasks(request):
     TaskModelFormSet = modelformset_factory(
-        TaskInfo, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed'), extra=0)
+        TaskInfo, form=TaskForm, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed', 'to_reschedule'), extra=0)
+    if request.method == "GET":
+        formset = TaskModelFormSet(
+            queryset=TaskInfo.objects.filter(user__user=request.user).order_by('due_date'))
+        return render(request, 'scheduler/edit.html', {'formset': formset})
 
-    formset = TaskModelFormSet(
-        queryset=TaskInfo.objects.filter(user__user=request.user))
+    else:
+        formset = TaskModelFormSet(request.POST,
+                                   queryset=TaskInfo.objects.filter(user__user=request.user))
 
-    return render(request, 'scheduler/edit.html', {'formset': formset})
+        userinfo = UserInfo.objects.get(user=request.user)
+        local_date = get_local_date(userinfo)
+
+        if formset.is_valid():
+            oldtasks = get_old_tasks(request)
+            updated_tasks = {}
+            newtask_cumulation = {}
+            needs_redo = 0
+
+            for form in formset:
+                if form.has_changed():
+                    # id = form.cleaned_data['id']
+                    obj = form.save()
+                    # print('id ', obj.id)
+                    if 'due_date' in form.changed_data or 'hours_needed' in form.changed_data or 'gradient' in form.changed_data:
+                        needs_redo += 1
+                        updated_tasks[str(obj.id)] = oldtasks.pop(str(obj.id))
+
+                        if float(obj.hours_needed):
+                            task = TaskModel(id=obj.id, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
+                                             week_day_work=float(userinfo.week_day_work), days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
+                            newtask_cumulation[(form.instance.pk, obj.task_name,
+                                                getDateDelta(obj.due_date))] = task
+                        else:
+                            TaskInfo.objects.get(id=obj.id).delete()
+            if needs_redo:
+                n = 0
+                for task, info in updated_tasks.items():
+                    reschedule_range = {f'{n}': tuple(info[2])}
+                    # info[2]
+                    n -= 1
+                process(request, userinfo, oldtasks,
+                        newtask_cumulation, reschedule_range)
+        return redirect('/scheduler/edit')
 
 
 @ api_view(['GET', 'POST'])
@@ -369,14 +409,34 @@ def tasks(request):
 @login_required
 def userinfo(request):
     if request.method == 'POST':
-        form = UserInfoForm(request.POST)
-        if form.is_valid():
-            a = form.save(commit=False)
-            a.user = request.user
-            a.save()
-            return HttpResponseRedirect('/scheduler/')
-    elif not UserInfo.objects.filter(user=request.user).exists():
-        form = UserInfoForm()
-        return render(request, 'scheduler/user_info.html', {'form': form})
+        if UserInfo.objects.filter(user=request.user).exists():
+            form = UserInfoForm(
+                request.POST, instance=UserInfo.objects.get(user=request.user))
+            form.save()
+            return redirect('/scheduler/settings')
+        else:
+            form = UserInfoForm(request.POST)
+            if form.is_valid():
+                a = form.save(commit=False)
+                a.user = request.user
+                a.save()
+                return HttpResponseRedirect('/scheduler/')
     else:
-        return redirect('/scheduler/')
+        if UserInfo.objects.filter(user=request.user).exists():
+            user_not_complete = False
+            form = UserInfoForm(
+                instance=UserInfo.objects.get(user=request.user))
+        else:
+            user_not_complete = True
+            form = UserInfoForm()
+        return render(request, 'scheduler/user_info.html', {'form': form, 'user_not_complete': user_not_complete})
+    # else:
+    #     return redirect('/scheduler/')
+
+
+# @login_required
+# def settings(request):
+#     if request.method == 'POST':
+#         pass
+#     else:
+#         form

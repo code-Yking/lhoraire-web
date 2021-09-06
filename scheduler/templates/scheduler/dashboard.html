@@ -8,17 +8,50 @@ body, html{
   display: flex;
   flex-direction: column;
   height: 100%;
-
+  flex:1
 }
 
 body{
   min-height: 100%;
 }
 
+.card-container{
+  margin-top: 20px; 
+  display: flex; 
+  max-height:30%
+}
+
+.cards{
+    max-width:300px;
+    align-self: left;
+    background-color: #f2f2f2;
+    padding: 50px;
+    border-radius: 10px;
+    margin-top: 20px;
+    margin-right: 20px
+}
+
+@media only screen and (max-width: 768px) {
+  body, html{
+    display: block;
+  }
+
+  .card-container{
+  margin-top: 20px; 
+  display: flex; 
+  flex-direction: column;
+  max-height:100%
+}
+
+.cards{
+  margin-right: auto;
+}
+}
+
 .schedule-graph {
   display: flex;
   height: 50vh;
-  max-height: 400px;
+  /* max-height: 400px; */
   align-items: stretch;
   width: 100%;
   /* align-content: flex-start; */
@@ -67,19 +100,6 @@ body{
     font-size: 10px;
 }
 
-body, html{
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.cards{
-    max-width:300px;
-    align-self: left;
-    background-color: #f2f2f2;
-    padding: 50px;
-    border-radius: 10px;
-}
 
 </style>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -90,8 +110,8 @@ body, html{
 
 {% block body %}
 <!-- <body> -->
-  <div class="container" style="margin-top: 20px; display: flex;"> 
-    <div class="cards container-md">
+  <div class="card-container container"> 
+    <div class="cards container-md" style="overflow: scroll;">
         <h6>Today's Todo List</h6>
         {% if todays_todo %}
         <ol class="list-group">
@@ -132,8 +152,13 @@ body, html{
           <p>Due dates in the next 10 days will be found here.</p>
           {% endif%}
     </div>
-</div>
 
+    <div class="cards container-md">
+      <h6>Progress</h6>
+
+    </div>
+</div>
+    <h6 style="margin-left: 20px; margin-top: 30px;">Schedule for the coming days</h6>
     <div class="schedule-graph">
         {% for day, data in schedule.items %}
         <div class="column-container">
@@ -214,7 +239,7 @@ body, html{
         var latestDate = new Date('{{ last_day }}')
         else{
             var latestDate = new Date()
-            latestDate.setDate(latestDate.getDate() -1)
+            latestDate.setDate(latestDate.getDate() -2)
             latestDate.toDateString()
         }
         const days_week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -251,17 +276,17 @@ body, html{
             $('.schedule-graph').children().eq(1).css('background-color','#C3E6FE');
 
             
-            // graphMarginTop = parseFloat($('.schedule-graph').css("margin-top"))
-            footerHeight = $('.footer').outerHeight()
-            $('.footer').css("margin-bottom", -footerHeight)
+            // // graphMarginTop = parseFloat($('.schedule-graph').css("margin-top"))
+            // footerHeight = $('.footer').outerHeight()
+            // $('.footer').css("margin-bottom", -footerHeight)
 
-            $(window).on('resize', function(){
-              columnContainerCount(this);
+            // $(window).on('resize', function(){
+            //   columnContainerCount(this);
     
-                // alert(footerHeight)
-                // console.log(graphMarginTop + footerHeight)
+            //     // alert(footerHeight)
+            //     // console.log(graphMarginTop + footerHeight)
     
-            });
+            // });
         });
 
 
