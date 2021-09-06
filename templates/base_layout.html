@@ -54,6 +54,7 @@
                 lhoraire
               </a>
               {% if user.is_authenticated and not user_not_complete %}
+              <div style="display: flex;">
               <nav id="n1">
                <a tabindex="0" role="button" class="btn btn-outline-secondary position-relative" style="margin-right: 20px;"
               data-bs-toggle="popover" title="Unschedulable Tasks" data-bs-html="true" data-bs-sanitize="false" data-bs-content="
@@ -86,6 +87,7 @@
               <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
               </button>
+            </div>
               <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                 <div class="navbar-nav">
                   <a class="nav-link {% if request.path == '/scheduler/' %} active {% endif %}" aria-current="page" href="{% url 'scheduler:index' %}">Dashboard</a>
