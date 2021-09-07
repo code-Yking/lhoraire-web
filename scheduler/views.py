@@ -16,7 +16,7 @@ from .forms import ReschedulerDateForm, TaskForm, UserInfoForm
 
 from scheduler.lhoraire_scheduler.model import TaskModel
 from scheduler.lhoraire_scheduler.reposition import Reposition
-from scheduler.lhoraire_scheduler.filter import Filter
+from scheduler.lhoraire_scheduler.filter import Filter, set_old_schedule
 from scheduler.lhoraire_scheduler.helpers import *
 
 from django.http import HttpResponse, JsonResponse
@@ -123,6 +123,7 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
     if oldtasks == None:
         oldtasks = get_old_tasks(request)
     # getting existing schedule and activating the days serializer
+
     days = get_old_schedule(request, oldtasks)[0]
     daysserializer = get_old_schedule(request, oldtasks)[1]
     exist_schedule_formated = get_old_schedule(request, oldtasks)[2]
@@ -133,12 +134,15 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
     if reschedule_range:
         man_reschedule = True
 
-    new_tasks_filtered = Filter(
+    new_tasks_filtered, used_day_ranged = Filter(
         newtask_cumulation, oldtasks, man_reschedule, reschedule_range)
+
+    old_schedule = set_old_schedule(exist_schedule_formated, used_day_ranged, float(userinfo.week_day_work), float(userinfo.week_end_work),
+                                    float(userinfo.max_week_day_work), float(userinfo.max_week_end_work), extra_hours)
 
     # print('EXIST:   ', exist_schedule_formated)
     # performing backend schedule generation
-    schedule = Reposition(new_tasks_filtered, exist_schedule_formated,
+    schedule = Reposition(new_tasks_filtered, old_schedule,
                           oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), extra_hours, local_date)
 
     # results of backend
@@ -183,6 +187,7 @@ def get_name(request, internal=False):
                                  week_day_work=float(userinfo.week_day_work), days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
                 newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
+
             process(request, userinfo, oldtasks, newtask_cumulation)
 
         else:
