@@ -109,7 +109,7 @@ def update_db(updated_tasks, final_schedule, final_to_reschedule, daysserializer
         taskobj.to_reschedule = final_to_reschedule.get(task, 0)
         taskobj.save()
 
-    print(extrahours)
+    print('extrahours', extrahours)
     new_schedule_reformated = [
         {'date': datestr, 'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()}, 'user': userinfo, 'extra_hours': extrahours.get(getDateDelta(datestr), 0)} for datestr, info in final_schedule.items()]
     print(new_schedule_reformated)
@@ -129,6 +129,7 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
     exist_schedule_formated = get_old_schedule(request, oldtasks)[2]
 
     extra_hours = get_old_schedule(request, oldtasks)[3]
+    print('extra_hours BEFORE ', extra_hours)
 
     man_reschedule = False
     if reschedule_range:
@@ -139,11 +140,13 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
 
     old_schedule = set_old_schedule(exist_schedule_formated, used_day_ranged, float(userinfo.week_day_work), float(userinfo.week_end_work),
                                     float(userinfo.max_week_day_work), float(userinfo.max_week_end_work), extra_hours)
+    # extra_hours = get_old_schedule(request, oldtasks)[3]
 
     # print('EXIST:   ', exist_schedule_formated)
     # performing backend schedule generation
     schedule = Reposition(new_tasks_filtered, old_schedule,
                           oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), extra_hours, local_date)
+    print('extra_hours AFTER ', extra_hours)
 
     # results of backend
     final_schedule = schedule.schedule       # schedule as dict

@@ -82,6 +82,17 @@ body{
 .column-container:hover > .add-task {
     display: block;
 }
+{% else %}
+{% for day, data in schedule.items%}
+{% if data.extra_hours %}
+
+.column-container#day-{{day}}:hover > .add-task{
+  display: block;
+}
+
+{% endif %}
+{% endfor %}
+
 {% endif %}
 
 .column-container > .add-task {
@@ -161,7 +172,7 @@ body{
     <h6 style="margin-left: 20px; margin-top: 30px;">Schedule for the coming days</h6>
     <div class="schedule-graph">
         {% for day, data in schedule.items %}
-        <div class="column-container">
+        <div class="column-container" id="day-{{day}}">
             <a role="button" class="btn btn-outline-secondary add-task" 
             style="position:absolute; top: 10%; left: 50%; transform: translate(-50%, 0);"
             data-bs-toggle="modal" data-bs-target="#rescheduler-modal" data-bs-date="{{day}}" data-bs-extrahours="{{data.extra_hours}}">
@@ -183,10 +194,10 @@ body{
             
                 <div class="column-bar rounded-1" id="bar" style="flex-basis: {{ hours|div:upper_limit|mul:100 }}%; background:{{ taskinfo.6 }}"
                 data-bs-toggle="tooltip" data-bs-placement="top" title="{{ taskinfo.5 }}, {{ hours|readable_hrs }}">
-                <div style="width:100%; height:100%;" data-bs-toggle="modal" data-bs-target="#task{{ task }}-{{day}}"></div>
+                <!-- <div style="width:100%; height:100%;" data-bs-toggle="modal" data-bs-target="#task{{ task }}-{{day}}"></div> -->
             </div>
 
-            <!-- Modal -->
+            <!-- Modal
 <div class="modal fade" id="task{{task}}-{{day}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -203,7 +214,7 @@ body{
         </div>
       </div>
     </div>
-  </div>
+  </div> -->
                 {% endwith %}
                 <!-- {{ task }} : {{ hours }} -->
             {% endfor %}
