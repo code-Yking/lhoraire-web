@@ -82,6 +82,10 @@ def get_old_schedule(request, oldtasks):
     exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items() if n in oldtasks.keys()}}
                                for day in daysserializer.data}
 
+    for day, data in dict(exist_schedule_formated).items():
+        if not data['quots']:
+            exist_schedule_formated.pop(day)
+
     extra_hours = {getDateDelta(day['date']): day['extra_hours']
                    for day in daysserializer.data}
     return days, daysserializer, exist_schedule_formated, extra_hours
@@ -118,6 +122,8 @@ def update_db(updated_tasks, final_schedule, final_to_reschedule, daysserializer
 
 
 def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_range={}):
+    print('new task cumul OLD')
+    pprint.pprint(newtask_cumulation)
     local_date = get_local_date(userinfo)
 
     if oldtasks == None:
@@ -128,6 +134,9 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
     daysserializer = get_old_schedule(request, oldtasks)[1]
     exist_schedule_formated = get_old_schedule(request, oldtasks)[2]
 
+    print('old schedule')
+    pprint.pprint(exist_schedule_formated)
+
     extra_hours = get_old_schedule(request, oldtasks)[3]
     print('extra_hours BEFORE ', extra_hours)
 
@@ -135,14 +144,21 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
     if reschedule_range:
         man_reschedule = True
 
+    print('old tasks')
+    pprint.pprint(oldtasks)
+
+    print('new tasks cumulat')
+    pprint.pprint(newtask_cumulation)
+    print()
+
     new_tasks_filtered, used_day_ranged = Filter(
-        newtask_cumulation, oldtasks, man_reschedule, reschedule_range)
+        newtask_cumulation, oldtasks, man_reschedule, reschedule_range, local_date, float(userinfo.week_day_work))
 
     old_schedule = set_old_schedule(exist_schedule_formated, used_day_ranged, float(userinfo.week_day_work), float(userinfo.week_end_work),
                                     float(userinfo.max_week_day_work), float(userinfo.max_week_end_work), extra_hours)
     # extra_hours = get_old_schedule(request, oldtasks)[3]
 
-    # print('EXIST:   ', exist_schedule_formated)
+    print('EXIST:   ', old_schedule)
     # performing backend schedule generation
     schedule = Reposition(new_tasks_filtered, old_schedule,
                           oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), extra_hours, local_date)
@@ -191,7 +207,7 @@ def get_name(request, internal=False):
                 newtask_cumulation[(form.instance.pk, obj.task_name,
                                     getDateDelta(obj.due_date))] = task
 
-            process(request, userinfo, oldtasks, newtask_cumulation)
+            process(request, userinfo, oldtasks, newtask_cumulation, {})
 
         else:
             messages.error(request, formset.errors)
@@ -250,7 +266,7 @@ def rescheduler(request, internal=False):
             day_obj.extra_hours = extra_hours
             day_obj.save()
 
-            process(request, userinfo, reschedule_range={
+            process(request, userinfo, None, {}, reschedule_range={
                     "0": (getDateDelta(reschedule_date), getDateDelta(reschedule_date))})
 
             return HttpResponseRedirect('/scheduler/')
