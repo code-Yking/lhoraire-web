@@ -75,7 +75,7 @@ def get_old_tasks(request):
     return oldtasks
 
 
-def get_old_schedule(request, oldtasks):
+def get_old_schedule(request, oldtasks, localdate):
     # fetching existing schedule as json/dict, so that it can be used by backend
     days = Days.objects.filter(user__user=request.user)
     daysserializer = DaysSerializer(days, many=True)
@@ -83,6 +83,10 @@ def get_old_schedule(request, oldtasks):
                                for day in daysserializer.data}
 
     for day, data in dict(exist_schedule_formated).items():
+        if datetime.strptime(day, '%Y-%m-%d').date() - localdate < timedelta(1):
+            exist_schedule_formated.pop(day)
+            continue
+
         if not data['quots']:
             exist_schedule_formated.pop(day)
 
@@ -115,7 +119,14 @@ def update_db(updated_tasks, final_schedule, final_to_reschedule, daysserializer
 
     print('extrahours', extrahours)
     new_schedule_reformated = [
-        {'date': datestr, 'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()}, 'user': userinfo, 'extra_hours': extrahours.get(getDateDelta(datestr), 0)} for datestr, info in final_schedule.items()]
+        {
+            'date': datestr,
+            'tasks_jsonDump': {n.strip('t'): k for n, k in info['quots'].items()},
+            'user': userinfo,
+            'extra_hours': extrahours.get(getDateDelta(datestr), 0)
+        }
+        for datestr, info in final_schedule.items()]
+
     print(new_schedule_reformated)
     # updates days info
     daysserializer.update(days, new_schedule_reformated)
@@ -130,14 +141,15 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
         oldtasks = get_old_tasks(request)
     # getting existing schedule and activating the days serializer
 
-    days = get_old_schedule(request, oldtasks)[0]
-    daysserializer = get_old_schedule(request, oldtasks)[1]
-    exist_schedule_formated = get_old_schedule(request, oldtasks)[2]
+    days = get_old_schedule(request, oldtasks, local_date)[0]
+    daysserializer = get_old_schedule(request, oldtasks, local_date)[1]
+    exist_schedule_formated = get_old_schedule(
+        request, oldtasks, local_date)[2]
 
     print('old schedule')
     pprint.pprint(exist_schedule_formated)
 
-    extra_hours = get_old_schedule(request, oldtasks)[3]
+    extra_hours = get_old_schedule(request, oldtasks, local_date)[3]
     print('extra_hours BEFORE ', extra_hours)
 
     man_reschedule = False
@@ -244,6 +256,7 @@ def previous_days(earliest_day, user, local_date):
                     if (task.modified_date - local_date).days != 0:
                         task.hours_needed -= decimal.Decimal(hours)
                         task.modified_date = local_date
+                        task.start_date = local_date + timedelta(1)
                         task.save()
 
         if (local_date - readonly_date).days > 2:
