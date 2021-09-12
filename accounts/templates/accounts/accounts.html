@@ -26,7 +26,7 @@ body{
 
 
 .container{
-    /* width:500px;  */
+    width:auto;
     display: flex; 
     /* flex:0 0 400;  */
     flex-direction: column;
@@ -40,7 +40,7 @@ body{
     padding: 50px;
     border-radius: 10px;
     border-color: azure;
-    border-width: 5px;
+    border-width: 3px;
     border-style: solid;
 }
 </style>
@@ -53,6 +53,9 @@ body{
 <h1>Welcome Back!</h1>
     {% elif request.path == '/accounts/signup' %}
     <h1>Sign Up</h1>
+    <div class="alert alert-secondary" role="alert">
+        Get a free account to use lhoraire time mananagement tool.
+      </div>
     {% endif %}
 
 <form action="{{request.path}}" method="post">
