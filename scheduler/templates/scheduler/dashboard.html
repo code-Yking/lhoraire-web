@@ -25,7 +25,7 @@ body{
     max-width:300px;
     align-self: left;
     background-color: #f2f2f2;
-    padding: 50px;
+    padding: 20px 10px;
     border-radius: 10px;
     margin-top: 20px;
     margin-right: 20px
@@ -104,6 +104,7 @@ body{
     display: flex;
   flex-direction: column;
   align-items: center;
+  margin-bottom: 2px;
   /* justify-content: center; */
   
 }
@@ -111,27 +112,23 @@ body{
 .day-month-text{
     font-size: 10px;
 }
-
-
 </style>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <link rel="stylesheet" href="/resources/demos/style.css">
 {% endblock %}
 
 
 {% block body %}
-<!-- <body> -->
+  </div>
   <div class="card-container container"> 
     <div class="cards container-md" style="overflow: scroll;">
         <h6>Today's Todo List</h6>
         {% if todays_todo %}
-        <ol class="list-group">
+        <ol class="list-group list-group-flush">
             {% for taskid, hours in todays_todo.items %}
             {% with taskinfo=tasks|get_item:taskid %}
             <li class="list-group-item d-flex justify-content-between align-items-start">
-              <div class="ms-2 me-auto">
-                <div class="fw-bold">{{taskinfo.5}}</div>
+              <div class="ms-2 me-auto" style="display:flex; flex-direction:row; align-items:center; overflow:hidden;">
+                <div style="width:15px; height:15px; background-color:{{taskinfo.6}}; flex:0 0 15px;"></div> &nbsp;
+                <div class="fw-bold" style="text-overflow: ellipsis; white-space: nowrap; overflow:hidden; flex-shrink:3;">{{taskinfo.5}}</div>
                 <!-- {{taskinfo.7}} -->
               </div>
               <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span>
@@ -144,15 +141,15 @@ body{
           {% endif%}
     </div>
 
-    <div class="cards container-md">
+    <div class="cards container-md" style="overflow: scroll;">
         <h6>Upcoming Due Dates</h6>
         {% if todays_todo %}
-        <ol class="list-group">
+        <ol class="list-group list-group-flush">
             {% for taskid, hours in todays_todo.items %}
             {% with taskinfo=tasks|get_item:taskid %}
             <li class="list-group-item d-flex justify-content-between align-items-start">
               <div class="ms-2 me-auto">
-                <div class="fw-bold">{{taskinfo.5}}</div>
+                <div class="fw-bold" style="text-overflow: ellipsis;">{{taskinfo.5}}</div>
                 <!-- {{taskinfo.7}} -->
               </div>
               <!-- <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span> -->
@@ -165,12 +162,12 @@ body{
           {% endif%}
     </div>
 
-    <div class="cards container-md">
+    <div class="cards container-md" style="overflow: scroll;">
       <h6>Progress</h6>
 
     </div>
 </div>
-    <h6 style="margin-left: 20px; margin-top: 30px;">Schedule for the coming days</h6>
+    <h6 style="margin-left: 20px; margin-top: 30px;">Your Schedule: </h6>
     <div class="schedule-graph">
         {% for day, data in schedule.items %}
         <div class="column-container" id="day-{{day}}">
@@ -292,13 +289,13 @@ body{
             // footerHeight = $('.footer').outerHeight()
             // $('.footer').css("margin-bottom", -footerHeight)
 
-            // $(window).on('resize', function(){
-            //   columnContainerCount(this);
+            $(window).on('resize', function(){
+              columnContainerCount(this);
     
-            //     // alert(footerHeight)
-            //     // console.log(graphMarginTop + footerHeight)
+                // alert(footerHeight)
+                // console.log(graphMarginTop + footerHeight)
     
-            // });
+            });
         });
 
 
