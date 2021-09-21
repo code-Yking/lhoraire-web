@@ -38,10 +38,10 @@ class UserInfoForm(ModelForm):
         exclude = ['user']
         widgets = {
             'time_zone': forms.Select(attrs={'class': 'form-select', 'id': 'time_zone_select'}),
-            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"}),
-            'max_week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"}),
-            'week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"}),
-            'max_week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1"})
+            'week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1", 'step': 0.1}),
+            'max_week_day_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1", 'step': 0.1}),
+            'week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1", 'step': 0.1}),
+            'max_week_end_work': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'min': "1", 'step': 0.1})
         }
         labels = {
             'week_day_work': "No of Hours you can spend on a Weekday",
