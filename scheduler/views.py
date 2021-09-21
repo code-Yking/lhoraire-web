@@ -82,6 +82,7 @@ def get_old_schedule(request, oldtasks, localdate):
     exist_schedule_formated = {day['date']: {'quots': {f"t{n}": k for n, k in json.loads(day['tasks_jsonDump']).items() if n in oldtasks.keys()}}
                                for day in daysserializer.data}
 
+    # TODO check if this is needed
     for day, data in dict(exist_schedule_formated).items():
         if datetime.strptime(day, '%Y-%m-%d').date() - localdate < timedelta(1):
             exist_schedule_formated.pop(day)
@@ -107,15 +108,30 @@ def run_algorithm(exist_schedule_formated, userinfo, newtask_cumulation, oldtask
     return process
 
 
-def update_db(updated_tasks, final_schedule, final_to_reschedule, daysserializer, days, local_date, userinfo, extrahours):
+def update_db(request, updated_tasks, final_schedule, final_to_reschedule, daysserializer, days, local_date, userinfo, extrahours):
     # updating the new and old tasks that were used with refreshed start dates
+
+    show_to_resch_alert = 0
+
     for task, data in updated_tasks.items():
         taskobj = TaskInfo.objects.get(id=task)
         taskobj.start_date = date.fromisoformat(
             getDatefromDelta(data[0]))
         taskobj.modified_date = local_date
+        if not taskobj.to_reschedule and final_to_reschedule.get(task, 0):
+            show_to_resch_alert += 1
         taskobj.to_reschedule = final_to_reschedule.get(task, 0)
         taskobj.save()
+
+    if show_to_resch_alert:
+        messages.warning(request,
+                         'Some tasks could not be scheduled. These tasks can be viewed by clicking on the top \
+                             right Unschedulable Tasks button. <br> \
+                         You can: <br> \
+                          add extra hours to days by clicking the + button on hovering on them <br> \
+                            or change the due date or hours needed in \
+                             the All Tasks page for these tasks.'
+                         )
 
     print('extrahours', extrahours)
     new_schedule_reformated = [
@@ -129,7 +145,7 @@ def update_db(updated_tasks, final_schedule, final_to_reschedule, daysserializer
 
     print(new_schedule_reformated)
     # updates days info
-    daysserializer.update(days, new_schedule_reformated)
+    daysserializer.update(days, new_schedule_reformated, local_date)
 
 
 def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_range={}):
@@ -183,7 +199,7 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
 
     final_to_reschedule = schedule.to_reschedule
 
-    update_db(updated_tasks, final_schedule, final_to_reschedule,
+    update_db(request, updated_tasks, final_schedule, final_to_reschedule,
               daysserializer, days, local_date, userinfo, extra_hours)
 
 
@@ -329,6 +345,12 @@ def index(request):
         schedule = {day['date']: {'quote': {task: hours for task, hours in json.loads(day['tasks_jsonDump']).items() if task in tasks}, 'extra_hours': float(day['extra_hours'])}
                     for day in daysserializer.data}
 
+        # TODO maybe integrate?
+        for day, data in dict(schedule).items():
+            if datetime.strptime(day, '%Y-%m-%d').date() - local_date < timedelta(-1):
+                schedule.pop(day)
+                continue
+
         # TODO remove latest
         latest = Days.objects.filter(
             user__user=request.user).latest('date')
@@ -436,8 +458,6 @@ def tasks(request):
         if request.method == 'GET':
             tasks = TaskInfo.objects.filter(user__user=request.user)
             taskinfoserializer = TaskInfoSerializer(tasks, many=True)
-            # result = {day['date']: {'quote': {task['task']: task['hours'] for task in day['tasks']}}
-            #           for day in daysserializer.data}
             result = {info['id']: [float(info['hours_needed']), info['gradient'], [(info['start_date'], getDateDelta(info['start_date'])), (info['due_date'], getDateDelta(info['due_date']))],
                                    (info['modified_date'], getDateDelta(info['modified_date']))] for info in taskinfoserializer.data}
             return Response(result)
@@ -447,9 +467,14 @@ def tasks(request):
 def userinfo(request):
     if request.method == 'POST':
         if UserInfo.objects.filter(user=request.user).exists():
+            time_zone = UserInfo.objects.get(user=request.user).time_zone
             form = UserInfoForm(
                 request.POST, instance=UserInfo.objects.get(user=request.user))
-            form.save()
+            if form.is_valid():
+                a = form.save(commit=False)
+                a.time_zone = time_zone
+                a.save()
+
             return redirect('/scheduler/settings')
         else:
             form = UserInfoForm(request.POST)
