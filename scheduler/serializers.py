@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta
 import json
+import pprint
 from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault
 
@@ -12,10 +14,15 @@ class TasksSerializer(serializers.ModelSerializer):
 
 
 class DaysListSerializer(serializers.ListSerializer):
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data, localdate):
         # Maps for id->instance and id->data item.
-        old_day_mapping = {day.date: day for day in instance}
+        old_day_mapping = {day.date.strftime(
+            "%Y-%m-%d"): day for day in instance}
         new_day_mapping = {item['date']: item for item in validated_data}
+        print('old')
+        pprint.pprint(old_day_mapping)
+        print('new')
+        pprint.pprint(new_day_mapping)
 
         # Perform creations and updates.
         ret = []
@@ -30,7 +37,8 @@ class DaysListSerializer(serializers.ListSerializer):
         # Perform deletions.
         for date, day in old_day_mapping.items():
             if date not in new_day_mapping:
-                day.delete()
+                if datetime.strptime(date, '%Y-%m-%d').date() - localdate > timedelta(0):
+                    day.delete()
 
         return ret
 
@@ -59,10 +67,14 @@ class DaysSerializer(serializers.ModelSerializer):
         return day
 
     def update(self, instance, validated_data):
+        # print('UPDATING....', validated_data)
         instance.date = validated_data.get('date', instance.date)
-        instance.tasks_jsonDump = validated_data.get(
-            'tasks_jsonDump', instance.tasks_jsonDump)
-        print(instance)
+        if 'tasks_jsonDump' in validated_data:
+            # print('is present')
+            instance.tasks_jsonDump = json.dumps(
+                validated_data['tasks_jsonDump'])
+        else:
+            instance.tasks_jsonDump = instance.tasks_jsonDump
         instance.extra_hours = instance.extra_hours
         # instance.created = validated_data.get('created', instance.created)
         instance.save()
