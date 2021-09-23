@@ -4,7 +4,26 @@
 {% block extrastyle %}
 
 <style>
+    @media only screen and (max-width: 768px) {
+  body, html{
+    display: block;
+  }
+
+  .card-container{
+  margin-top: 20px; 
+  display: flex; 
+  flex-direction: column;
+  max-height:100%
+}
+
+
+.card{
+  margin-right: auto;
+  margin-top: 10px;
+}
+}
     .home{
+        background-attachment: fixed;
         background-image: url("{% static 'main/img/1x/Asset 9.png' %}");
         background-repeat: no-repeat;
         background-size: contain;
@@ -21,7 +40,8 @@
     .card{
         background-color: aliceblue;
         padding: 10px;
-        margin: 0 10px;
+        margin-right: 10px;
+        margin-left:10px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -30,6 +50,9 @@
     .joining > a{
         font-size: 1.5em;
         margin: 0 10px;
+    }
+    p{
+        font-size: 1.1em;
     }
 </style>
 
@@ -50,7 +73,7 @@
         <a href="/accounts/login" role="button" class="btn btn-outline-primary">Login</a>
     </div>
 </div>
-    <div style="display: flex; margin-top: 20px;">
+    <div style="display: flex; margin-top: 20px;" class="card-container">
 
         <div class="card">
             <svg xmlns="http://www.w3.org/2000/svg" width="40%" height="40%" fill="currentColor" class="bi bi-folder2-open" viewBox="0 0 16 16">
