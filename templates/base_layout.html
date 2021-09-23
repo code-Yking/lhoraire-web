@@ -14,6 +14,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            background-color: mintcream;
           }
           body{
             min-height: 100%;
@@ -55,7 +56,9 @@
             <div class="container-fluid">
               <a class="navbar-brand" href="https://lhoraire.work">
                 <img src="{% static 'main/img/icon3.png' %}" alt="" width="30" height="30" class="d-inline-block align-text-center">
+                {% if request.path != '/' %}
                 lhoraire
+                {% endif %}
               </a>
               {% if user.is_authenticated and not user_not_complete %}
               <div style="display: flex; margin-left:auto">
@@ -194,7 +197,7 @@
           <div>
             <small>MIT License</small>
             |
-            <small><a target="_blank" href="https://github.com/code-Yking/lhoraire-scheduler">Github</a></small>
+            <small><a target="_blank" href="https://github.com/code-Yking/lhoraire-web">Github</a></small>
             |
             <small><a href="mailto:dev@lhoraire.work?subject = Feedback&body =">Send Feedback</a></small>
           </div>
