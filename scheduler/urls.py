@@ -5,7 +5,7 @@ from . import views
 app_name = 'scheduler'
 
 urlpatterns = [
-    path('create', views.get_name, name='create'),
+    path('create', views.add_tasks, name='create'),
     path('schedule', views.schedule, name='schedule'),
     path('tasks', views.tasks, name='tasks'),
     path('', views.index, name='index'),
