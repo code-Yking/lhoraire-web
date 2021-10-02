@@ -36,6 +36,9 @@ class TaskInfo(models.Model):
     days_needed = models.DecimalField(
         decimal_places=2, max_digits=4, default=0, null=True)
 
+    total_hours = models.DecimalField(
+        decimal_places=2, max_digits=4, default=0, null=True)
+
     gradient = models.CharField(max_length=1, default='+', choices=(
         ['+', 'Increasing'], ['-', 'Decreasing'], ['0', 'Roughly same']))
 

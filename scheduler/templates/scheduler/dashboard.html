@@ -143,18 +143,15 @@ body{
 
     <div class="cards container-md" style="overflow: scroll;">
         <h6>Upcoming Due Dates</h6>
-        {% if todays_todo %}
+        {% if dues_comming_up %}
         <ol class="list-group list-group-flush">
-            {% for taskid, hours in todays_todo.items %}
-            {% with taskinfo=tasks|get_item:taskid %}
+            {% for name, days_remain in dues_comming_up.items %}
             <li class="list-group-item d-flex justify-content-between align-items-start">
               <div class="ms-2 me-auto">
-                <div class="fw-bold" style="text-overflow: ellipsis;">{{taskinfo.5}}</div>
-                <!-- {{taskinfo.7}} -->
+                <div class="fw-bold" style="text-overflow: ellipsis;">{{name}}</div>
               </div>
-              <!-- <span class="badge bg-primary rounded-pill">{{ hours|readable_hrs }}</span> -->
+              <span class="badge bg-primary rounded-pill">{{ days_remain }} days</span>
             </li>
-            {% endwith %}
             {% endfor %}
           </ol>
           {%else%}
@@ -164,7 +161,20 @@ body{
 
     <div class="cards container-md" style="overflow: scroll;">
       <h6>Progress</h6>
-
+      {% if progress %}
+      <ol class="list-group list-group-flush">
+          {% for name, percent_done in progress.items %}
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+              <div class="fw-bold" style="text-overflow: ellipsis;">{{name}}</div>
+            </div>
+            <span class="badge bg-primary rounded-pill">{{ percent_done|mul:100 }}%</span>
+          </li>
+          {% endfor %}
+        </ol>
+        {%else%}
+        <p>Due dates in the next 10 days will be found here.</p>
+        {% endif%}
     </div>
 </div>
     <h6 style="margin-left: 20px; margin-top: 30px;">Your Schedule: </h6>
