@@ -56,7 +56,7 @@ class TaskInfo(models.Model):
 class Tasks(models.Model):
     task = models.ForeignKey(TaskInfo, on_delete=CASCADE, default="")
     hours = models.DecimalField(decimal_places=4, max_digits=10, default=0)
-    hours_2 = models.DecimalField(decimal_places=4, max_digits=10, default=0)
+    # hours_2 = models.DecimalField(decimal_places=4, max_digits=10, default=0)
 
     def __str__(self):
         return self.task.task_name
