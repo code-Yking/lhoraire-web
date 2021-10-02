@@ -20,7 +20,7 @@ class TaskForm(ModelForm):
     class Meta:
         model = TaskInfo
         exclude = ['user', 'modified_date',
-                   'start_date', 'days_needed', 'to_reschedule']
+                   'start_date', 'days_needed', 'to_reschedule', 'total_hours']
         widgets = {
             'due_date': TextInput(attrs={"id": "datepicker", "required": "True", "autocomplete": "off"}),
             'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
