@@ -352,7 +352,7 @@ def index(request):
             sorted(due_dates_comming_up.items(), key=lambda item: item[1]))
 
         progress = {task[5]: 1 - task[8] / task[0]
-                    for task in tasks.values() if task[2][1] - getDateDelta(local_date) > 1 and task[8] / task[0]}
+                    for task in tasks.values() if task[2][1] - getDateDelta(local_date) > 1 and 1-task[8] / task[0]}
 
         progress = dict(
             sorted(progress.items(), key=lambda item: item[1], reverse=True))
