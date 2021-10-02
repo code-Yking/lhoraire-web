@@ -64,7 +64,7 @@ class Tasks(models.Model):
 
 class Days(models.Model):
     date = models.DateField()
-    test = models.DateField()
+    # test = models.DateField()
     # tasks = models.ManyToManyField(Tasks)
 
     tasks_jsonDump = models.CharField(max_length=481)
