@@ -13,12 +13,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='days',
             name='test',
-            field=models.DateField(default='hi'),
+            field=models.DateField(default='2021-09-10'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='tasks',
             name='hours_2',
-            field=models.DecimalField(decimal_places=4, default=0, max_digits=10),
+            field=models.DecimalField(
+                decimal_places=4, default=0, max_digits=10),
         ),
     ]
