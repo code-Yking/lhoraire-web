@@ -28,7 +28,8 @@ class TaskForm(ModelForm):
             'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '2', "required": "True", "autocomplete": "off"}),
             'gradient': forms.Select(attrs={'class': 'form-select'}),
             'hours_needed': forms.TextInput(attrs={'class': 'form-control', 'type': 'number', 'required': 'True', 'step': 0.01, 'min': "0", "autocomplete": "off"}),
-            'days_needed': forms.TextInput(attrs={'class': 'form-control'})
+            'days_needed': forms.TextInput(attrs={'class': 'form-control'}),
+            'total_hours': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'})
         }
 
 
@@ -56,7 +57,7 @@ class ReschedulerDateForm(forms.Form):
         attrs={'type': 'hidden', 'name': 'date'}))
     # to_date = forms.DateInput()
     extra_hours = forms.DecimalField(max_digits=4, decimal_places=2, widget=forms.TextInput(
-        attrs={'class': 'form-control', 'type': 'number'}))
+        attrs={'class': 'form-control', 'type': 'number', 'min': "0", 'step': 0.1}))
 
     # class Meta:
     #     widgets = {

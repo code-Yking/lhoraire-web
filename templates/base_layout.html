@@ -140,11 +140,49 @@
           </nav>
         {% block create_modal %}
         {% endblock create_modal%}
-
+        
         {% block body %}
         {% endblock %}
+        
+        {% if add_tasks_formset %}
+              <!-- Modal -->
+<div class="modal fade" id="createTask" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Create New Task</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'scheduler:create' %}" method="post">
+      <div class="modal-body">
+              {% csrf_token %}
+              {{ add_tasks_formset.management_form }}
+              {% for form in add_tasks_formset %}
+              {% for field in form %}
+              <div class="mb-3">
+                  {{ field.errors }}
+                  <label class="form-label" for="" >{{field.label_tag}}</label>
+                   {{ field }}
+              </div>
+              {% endfor %}
+              {% endfor %}
+  
+  
+              <!-- <input type="submit" value="Login"> -->
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-primary">Add</button>
+          </div>
+      </form>
+    </div>
+  </div>
+  </div>
 
+        {% endif %}
+        {% if request.path != '/accounts/login/' or request.path != '/accounts/signup/' %}
         {% if messages %}
+        {% autoescape off %}
         {% for message in messages %}
         <div id="errorToast"  class="toast align-items-center text-white bg-danger border-0 position-fixed" 
         role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="bottom: 5px; right: 5px;">
@@ -156,6 +194,8 @@
           </div>
         </div>
         {% endfor %}
+        {% endautoescape %}
+        {% endif %}
         {% endif %}
 
         {% block extrascript %}

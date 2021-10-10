@@ -351,8 +351,8 @@ def index(request):
         due_dates_comming_up = dict(
             sorted(due_dates_comming_up.items(), key=lambda item: item[1]))
 
-        progress = {task[5]: 1 - task[8] / task[0]
-                    for task in tasks.values() if task[2][1] - getDateDelta(local_date) > 1 and 1-task[8] / task[0]}
+        progress = {task[5]: round(1 - task[0]/task[8], 2)
+                    for task in tasks.values() if task[2][1] - getDateDelta(local_date) > 1 and 1-task[0]/task[8]}
 
         progress = dict(
             sorted(progress.items(), key=lambda item: item[1], reverse=True))
@@ -363,7 +363,7 @@ def index(request):
         due_dates_comming_up = {}
         progress = {}
 
-    taskformset = add_tasks(request=request, internal=True)
+    add_tasks_formset = add_tasks(request=request, internal=True)
     rescheduleform = rescheduler(request=request, internal=True)
 
     # if user_query.exists():
@@ -411,7 +411,7 @@ def index(request):
     return render(request, 'scheduler/dashboard.html', {
         'schedule': schedule,
         'tasks': tasks,
-        'formset': taskformset,
+        'add_tasks_formset': add_tasks_formset,
         'userinfo': user_query,
         'todays_todo': todays_todo,
         'last_day': last_day,
@@ -428,9 +428,31 @@ def edit_tasks(request):
     TaskModelFormSet = modelformset_factory(
         TaskInfo, form=TaskForm, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed', 'to_reschedule'), extra=0)
     if request.method == "GET":
+        add_tasks_formset = add_tasks(request=request, internal=True)
+
         formset = TaskModelFormSet(
             queryset=TaskInfo.objects.filter(user__user=request.user).order_by('due_date'))
-        return render(request, 'scheduler/edit.html', {'formset': formset})
+
+        tasks_query = TaskInfo.objects.filter(user__user=request.user)
+        # print("TASKS", tasks_query)
+        if tasks_query.exists():
+            taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
+
+            tasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], info['to_reschedule'],
+                                       getDateDelta(info['modified_date']), info['task_name'], info['color'], info['task_description'], float(info['total_hours'])] for info in taskinfoserializer.data}
+            # print(tasks)
+            to_reschedule = {task: float(info[3])
+                             for task, info in tasks.items() if float(info[3]) != 0}
+
+        else:
+            to_reschedule = {}
+
+        return render(request, 'scheduler/edit.html', {
+            'formset': formset,
+            'add_tasks_formset': add_tasks_formset,
+            'to_reschedule': to_reschedule,
+            'tasks': tasks
+        })
 
     else:
         formset = TaskModelFormSet(request.POST,
@@ -473,6 +495,8 @@ def edit_tasks(request):
                     n -= 1
                 process(request, userinfo, oldtasks,
                         newtask_cumulation, reschedule_range)
+        else:
+            messages.error(request, formset.errors)
         return redirect('/scheduler/edit')
 
 
@@ -501,12 +525,27 @@ def tasks(request):
 
 @login_required
 def userinfo(request):
+    user_info = UserInfo.objects.filter(user=request.user)
+
     if request.method == 'POST':
-        if UserInfo.objects.filter(user=request.user).exists():
+        if user_info.exists():
             time_zone = UserInfo.objects.get(user=request.user).time_zone
             form = UserInfoForm(
                 request.POST, instance=UserInfo.objects.get(user=request.user))
+
+            # Form is valid
+            # TODO fix
             if form.is_valid():
+                # if
+                if 'week_day_work' in form.changed_data or 'max_week_day_work' in form.changed_data or 'week_end_work' in form.changed_data or 'max_week_end_work' in form.changed_data:
+
+                    local_date = get_local_date(user_info[0])
+                    latest = Days.objects.filter(
+                        user__user=request.user).latest('date').date
+                    print('entire refresh')
+                    process(request, user_info[0], None, {}, reschedule_range={
+                        "0": (getDateDelta(local_date), getDateDelta(latest))})
+
                 a = form.save(commit=False)
                 a.time_zone = time_zone
                 a.save()
@@ -520,14 +559,40 @@ def userinfo(request):
                 a.save()
                 return HttpResponseRedirect('/scheduler/')
     else:
-        if UserInfo.objects.filter(user=request.user).exists():
+        if user_info.exists():
             user_not_complete = False
+
             form = UserInfoForm(
                 instance=UserInfo.objects.get(user=request.user))
+
+            add_tasks_formset = add_tasks(request=request, internal=True)
+
+            tasks_query = TaskInfo.objects.filter(user__user=request.user)
+            # print("TASKS", tasks_query)
+            if tasks_query.exists():
+                taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
+
+                tasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], info['to_reschedule'],
+                                           getDateDelta(info['modified_date']), info['task_name'], info['color'], info['task_description'], float(info['total_hours'])] for info in taskinfoserializer.data}
+                # print(tasks)
+                to_reschedule = {task: float(info[3])
+                                 for task, info in tasks.items() if float(info[3]) != 0}
+
+            else:
+                to_reschedule = {}
+
         else:
             user_not_complete = True
             form = UserInfoForm()
-        return render(request, 'scheduler/user_info.html', {'form': form, 'user_not_complete': user_not_complete})
+            to_reschedule = {}
+
+        return render(request, 'scheduler/user_info.html', {
+            'form': form,
+            'user_not_complete': user_not_complete,
+            'add_tasks_formset': add_tasks_formset,
+            'to_reschedule': to_reschedule,
+            'tasks': tasks
+        })
     # else:
     #     return redirect('/scheduler/')
 
