@@ -239,7 +239,7 @@ def add_tasks(request, internal=False):
                 obj = form.save(commit=False)
                 obj.user = userinfo
                 obj.to_reschedule = 0
-                obj.total_hours = obj.hours_needed
+                obj.total_hours = float(obj.hours_needed)
                 obj.save()
                 # forming TaskModel using the form data for backend
                 task = TaskModel(id=obj.id, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
