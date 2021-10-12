@@ -594,11 +594,14 @@ def userinfo(request):
 
             else:
                 to_reschedule = {}
+                add_tasks_formset = {}
+                tasks = {}
 
         else:
             user_not_complete = True
             form = UserInfoForm()
             to_reschedule = {}
+            tasks = {}
 
         return render(request, 'scheduler/user_info.html', {
             'form': form,
