@@ -275,7 +275,14 @@ body{
             if (no_of_col_req - no_of_col > 0 )
             for (n of Array(no_of_col_req - no_of_col).keys()){
                 latestDate.setDate(latestDate.getDate()+1)
-                $('.schedule-graph').append("<div class=\"column-container\"> <div class=\"column-bar\" style=\"flex-grow: 1;\"><span class=\"day-month-text\">"+days_week[latestDate.getDay()]+"</span></div> <div class=\"column-bar\"><span class=\"day-month-text\">"+('0' + latestDate.getDate()).slice(-2)+'/'+('0' + (latestDate.getMonth()+1) ).slice(-2)+"</span></div></div>")
+                $('.schedule-graph').append(" \
+                <div class=\"column-container\"> \
+                  <div class=\"column-bar\" style=\"flex-grow: 1;\"> \
+                    <span class=\"day-month-text\">" + days_week[latestDate.getDay()] + "</span></div> \
+                    <div class=\"column-bar\"> \
+                      <span class=\"day-month-text\">" + 
+                        ('0' + latestDate.getDate()).slice(-2) + '/'+('0' + (latestDate.getMonth()+1) ).slice(-2)+
+                        "</span></div></div>")
         }
         }
         

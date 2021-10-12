@@ -52,7 +52,10 @@ def readable_hrs(hour):
     if floor(hour) == 0:
         return str(round((hour - floor(hour)) * 60)) + " mins"
     else:
-        return str(floor(hour)) + " hrs " + str(round((hour - floor(hour)) * 60)) + " mins"
+        if round((hour - floor(hour)) * 60) == 60:
+            return str(floor(hour) + 1) + " hrs 0 mins"
+        else:
+            return str(floor(hour)) + " hrs " + str(round((hour - floor(hour)) * 60)) + " mins"
 
 
 def get_local_date(userinfo):
@@ -265,29 +268,38 @@ def add_tasks(request, internal=False):
 def previous_days(earliest_day, user, local_date):
     day_count = int(
         (local_date - datetime.strptime(earliest_day, "%Y-%m-%d").date()).days)
+    # print('day_count ', day_count)
+    print('earliest_day ', earliest_day)
 
-    for readonly_date in (local_date - timedelta(n) for n in range(day_count)):
-        print(readonly_date)
+    # goes through all the days prior to today
+    for readonly_date in (local_date - timedelta(n+1) for n in range(day_count)):
+        # print(readonly_date)
         day_obj = Days.objects.filter(
             user__user=user, date=readonly_date)
 
+        # if the day exists
         if day_obj.exists():
             day_tasks = json.loads(day_obj[0].tasks_jsonDump)
-        # print(day_tasks)
+
+            #
             for task, hours in day_tasks.items():
                 task_obj = TaskInfo.objects.filter(
                     user__user=user, id=int(task))
                 if task_obj.exists():
                     task = task_obj[0]
-                    print(task.modified_date - local_date)
-                    if (task.modified_date - local_date).days != 0:
+                    # TODO make sure this actually works; and also better comment
+                    # preventing duplication of reduction in time.
+                    if (task.modified_date - local_date).days > (local_date - day_obj[0].date).days:
+                        print(task.modified_date, local_date, day_obj[0].date)
                         task.hours_needed -= decimal.Decimal(hours)
                         task.modified_date = local_date
                         task.start_date = local_date + timedelta(1)
                         task.save()
 
-        if (local_date - readonly_date).days > 2:
-            print('delete')
+            # day will be deleted if it is more than 2 days prior
+            if (local_date - readonly_date).days > 2:
+                print('deleted ', readonly_date)
+                day_obj.delete()
 
 
 def rescheduler(request, internal=False):
@@ -373,6 +385,8 @@ def index(request):
                     for day in daysserializer.data}
         if schedule:
             # TODO maybe integrate?
+            earliest_day = list(schedule.keys())[0]
+
             for day, data in dict(schedule).items():
                 if datetime.strptime(day, '%Y-%m-%d').date() - local_date < timedelta(-1):
                     schedule.pop(day)
@@ -393,7 +407,7 @@ def index(request):
                                    key=lambda x: datetime.strptime(x[0], '%Y-%m-%d')))
 
             # pprint.pprint(schedule)
-            earliest_day = list(schedule.keys())[0]
+
             last_day = list(schedule.keys())[-1]
 
             previous_days(earliest_day, request.user, local_date)
