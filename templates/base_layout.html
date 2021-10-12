@@ -180,7 +180,7 @@
   </div>
 
         {% endif %}
-        {% if request.path != '/accounts/login/' or request.path != '/accounts/signup/' %}
+        {% if request.path != '/accounts/login' and request.path != '/accounts/signup' %}
         {% if messages %}
         {% autoescape off %}
         {% for message in messages %}
