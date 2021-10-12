@@ -600,6 +600,7 @@ def userinfo(request):
         else:
             user_not_complete = True
             form = UserInfoForm()
+            add_tasks_formset = {}
             to_reschedule = {}
             tasks = {}
 
