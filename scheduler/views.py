@@ -315,6 +315,16 @@ def rescheduler(request, internal=False):
 
             day_obj = Days.objects.get(
                 user__user=request.user, date=date.fromisoformat(reschedule_date))
+            tasks = json.dumps(day_obj.tasks_jsonDump)
+            sum_of_tasks = sum(tasks.values())
+
+            # backend validation that the sum of hours do not exceed 24hours
+            if sum_of_tasks + extra_hours > 24:
+                extra_hours -= (sum_of_tasks + extra_hours) - 24
+
+            if extra_hours < 0:
+                return HttpResponseRedirect('/scheduler/')
+
             day_obj.extra_hours = extra_hours
             day_obj.save()
 
@@ -383,14 +393,14 @@ def index(request):
         daysserializer = DaysSerializer(schedule_query, many=True)
         schedule = {day['date']: {'quote': {task: hours for task, hours in json.loads(day['tasks_jsonDump']).items() if task in tasks}, 'extra_hours': float(day['extra_hours'])}
                     for day in daysserializer.data}
+        for day, data in dict(schedule).items():
+            if datetime.strptime(day, '%Y-%m-%d').date() - local_date < timedelta(-1):
+                schedule.pop(day)
+                continue
+
         if schedule:
             # TODO maybe integrate?
             earliest_day = list(schedule.keys())[0]
-
-            for day, data in dict(schedule).items():
-                if datetime.strptime(day, '%Y-%m-%d').date() - local_date < timedelta(-1):
-                    schedule.pop(day)
-                    continue
 
             # TODO remove latest
             latest = Days.objects.filter(

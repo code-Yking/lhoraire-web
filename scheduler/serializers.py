@@ -19,10 +19,10 @@ class DaysListSerializer(serializers.ListSerializer):
         old_day_mapping = {day.date.strftime(
             "%Y-%m-%d"): day for day in instance}
         new_day_mapping = {item['date']: item for item in validated_data}
-        print('old')
-        pprint.pprint(old_day_mapping)
-        print('new')
-        pprint.pprint(new_day_mapping)
+        # print('old')
+        # pprint.pprint(old_day_mapping)
+        # print('new')
+        # pprint.pprint(new_day_mapping)
 
         # Perform creations and updates.
         ret = []
@@ -44,33 +44,28 @@ class DaysListSerializer(serializers.ListSerializer):
 
 
 class DaysSerializer(serializers.ModelSerializer):
-    # tasks = TasksSerializer(many=True)
-    # id = serializers.IntegerField()
-
     class Meta:
         list_serializer_class = DaysListSerializer
         model = Days
         fields = ['date', 'tasks_jsonDump', 'extra_hours']
         # depth = 2
 
+    # create the day object
     def create(self, validated_data):
-        new_tasks = validated_data.pop('tasks_jsonDump')
-        # tasks = validated_data.pop('tasks')
+        new_tasks = {k: round(v, 4) for k, v in validated_data.pop(
+            'tasks_jsonDump').items()}
+
         tasks_jsonDump = json.dumps(new_tasks)
 
         day = Days.objects.create(
             date=validated_data['date'], tasks_jsonDump=tasks_jsonDump, user=validated_data['user'], extra_hours=validated_data['extra_hours'])
-        # for task in new_tasks:
-        #     created_task = Tasks.objects.create(
-        #         hours=task['hours'], task=TaskInfo.objects.get(id=task['task']))
-        #     day.tasks.add(created_task)
         return day
 
+    # update existing day objects
     def update(self, instance, validated_data):
         # print('UPDATING....', validated_data)
         instance.date = validated_data.get('date', instance.date)
         if 'tasks_jsonDump' in validated_data:
-            # print('is present')
             instance.tasks_jsonDump = json.dumps(
                 validated_data['tasks_jsonDump'])
         else:
