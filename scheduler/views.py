@@ -64,6 +64,8 @@ def get_local_date(userinfo):
         pytz.timezone(timezone)).date()
     return local_date
 
+# return a dictionary containing old tasks of the user
+
 
 def get_old_tasks(request, local_date):
     tasks = TaskInfo.objects.filter(user__user=request.user)
@@ -71,8 +73,16 @@ def get_old_tasks(request, local_date):
     if len(tasks):
         taskinfoserializer = TaskInfoSerializer(tasks, many=True)
 
-        oldtasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], 0,
-                                      getDateDelta(info['modified_date'])] for info in taskinfoserializer.data if getDateDelta(info['due_date']) > getDateDelta(local_date)}
+        oldtasks = {
+            f"{info['id']}": [
+                float(info['hours_needed']),
+                info['gradient'],
+                [getDateDelta(info['start_date']),
+                 getDateDelta(info['due_date'])],
+                0,
+                getDateDelta(info['modified_date'])
+            ]
+            for info in taskinfoserializer.data if getDateDelta(info['due_date']) > getDateDelta(local_date)}
     else:
         oldtasks = {}
     return oldtasks
@@ -271,6 +281,15 @@ def previous_days(earliest_day, user, local_date):
     # print('day_count ', day_count)
     print('earliest_day ', earliest_day)
 
+    all_tasks_obj = TaskInfo.objects.filter(
+        user__user=user)
+    print(all_tasks_obj)
+    if all_tasks_obj.exists():
+        for task in all_tasks_obj:
+            # delete the task info if the due date is today or before
+            if (task.due_date - local_date).days <= 0:
+                task.delete()
+
     # goes through all the days prior to today
     for readonly_date in (local_date - timedelta(n+1) for n in range(day_count)):
         # print(readonly_date)
@@ -285,6 +304,7 @@ def previous_days(earliest_day, user, local_date):
             for task, hours in day_tasks.items():
                 task_obj = TaskInfo.objects.filter(
                     user__user=user, id=int(task))
+
                 if task_obj.exists():
                     task = task_obj[0]
                     # TODO make sure this actually works; and also better comment
@@ -356,8 +376,14 @@ def index(request):
     # print('SCHEDULE QUERY', schedule_query)
 
     tasks_query = TaskInfo.objects.filter(user__user=request.user)
-    # print("TASKS", tasks_query)
     if tasks_query.exists():
+
+        for task in tasks_query:
+            print(task)
+            # delete the task info if the due date is today or before
+            if (task.due_date - local_date).days <= 0:
+                task.delete()
+
         taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
         tasks = {f"{info['id']}": [float(info['hours_needed']), info['gradient'], [getDateDelta(info['start_date']), getDateDelta(info['due_date'])], info['to_reschedule'],
@@ -469,6 +495,7 @@ def edit_tasks(request):
                              for task, info in tasks.items() if float(info[3]) != 0}
 
         else:
+            tasks = {}
             to_reschedule = {}
 
         return render(request, 'scheduler/edit.html', {
