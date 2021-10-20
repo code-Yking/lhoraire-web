@@ -329,13 +329,13 @@ def rescheduler(request, internal=False):
         if form.is_valid():
             userinfo = UserInfo.objects.get(user=request.user)
             # from_date = form.cleaned_data['from_date']
-            extra_hours = form.cleaned_data['extra_hours']
+            extra_hours = float(form.cleaned_data['extra_hours'])
             reschedule_date = form.cleaned_data['date']
             # print(date, hours)
 
             day_obj = Days.objects.get(
                 user__user=request.user, date=date.fromisoformat(reschedule_date))
-            tasks = json.dumps(day_obj.tasks_jsonDump)
+            tasks = json.loads(day_obj.tasks_jsonDump)
             sum_of_tasks = sum(tasks.values())
 
             # backend validation that the sum of hours do not exceed 24hours
