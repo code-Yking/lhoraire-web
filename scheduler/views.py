@@ -309,7 +309,7 @@ def previous_days(earliest_day, user, local_date):
                     task = task_obj[0]
                     # TODO make sure this actually works; and also better comment
                     # preventing duplication of reduction in time.
-                    if (task.modified_date - local_date).days > (local_date - day_obj[0].date).days:
+                    if (local_date - task.modified_date).days > (local_date - day_obj[0].date).days:
                         print(task.modified_date, local_date, day_obj[0].date)
                         task.hours_needed -= decimal.Decimal(hours)
                         task.modified_date = local_date
