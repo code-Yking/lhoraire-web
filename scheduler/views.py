@@ -501,6 +501,7 @@ def index(request):
 def edit_tasks(request):
     TaskModelFormSet = modelformset_factory(
         TaskInfo, form=TaskForm, exclude=('user', 'id', 'modified_date', 'start_date', 'days_needed', 'to_reschedule'), extra=0)
+
     if request.method == "GET":
         add_tasks_formset = add_tasks(request=request, internal=True)
 

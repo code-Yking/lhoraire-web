@@ -24,7 +24,7 @@
                   <div id="form{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
                     <div class="accordion-body">
                         <div class="collapse" id="form{{ forloop.counter }}">
-                        {% for field in form %}
+                        {% for field in form.visible_fields %}
                         <div class="mb-3">
                             {{ field.errors }}
                             <label class="form-label" for="" >{{field.label_tag}}</label>

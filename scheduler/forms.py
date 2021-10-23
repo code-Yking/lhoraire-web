@@ -22,7 +22,7 @@ class TaskForm(ModelForm):
         exclude = ['user', 'modified_date',
                    'start_date', 'days_needed', 'to_reschedule', 'total_hours']
         widgets = {
-            'due_date': TextInput(attrs={"id": "datepicker", "required": "True", "autocomplete": "off"}),
+            'due_date': TextInput(attrs={"class": "datepicker", "required": "True", "autocomplete": "off"}),
             'color': TextInput(attrs={"type": "color", "class": "form-control form-control-color"}),
             'task_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Study Physics', "required": "True", "autocomplete": "off"}),
             'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': '2', "required": "True", "autocomplete": "off"}),
