@@ -173,6 +173,12 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
     # if there is no oldtasks given, get them.
     if oldtasks == None:
         oldtasks = get_old_tasks(request, local_date)
+        print('no old tasks given')
+        pprint.pprint(oldtasks)
+    else:
+        print('OLD TASKS GIVEN!')
+        pprint.pprint(oldtasks)
+
     # getting existing schedule and activating the days serializer
 
     days = get_old_schedule(request, oldtasks, local_date)[0]
@@ -205,7 +211,7 @@ def process(request, userinfo, oldtasks=None, newtask_cumulation={}, reschedule_
                                     float(userinfo.max_week_day_work), float(userinfo.max_week_end_work), extra_hours)
     # extra_hours = get_old_schedule(request, oldtasks)[3]
 
-    print('EXIST:   ', old_schedule)
+    # print('EXIST:   ', old_schedule)
     # performing backend schedule generation
     schedule = Reposition(new_tasks_filtered, old_schedule,
                           oldtasks, (userinfo.week_day_work, userinfo.week_end_work), (userinfo.max_week_day_work, userinfo.max_week_end_work), extra_hours, local_date)
@@ -281,17 +287,18 @@ def previous_days(earliest_day, user, local_date):
     # print('day_count ', day_count)
     print('earliest_day ', earliest_day)
 
-    all_tasks_obj = TaskInfo.objects.filter(
+    all_tasks_query = TaskInfo.objects.filter(
         user__user=user)
-    print(all_tasks_obj)
-    if all_tasks_obj.exists():
-        for task in all_tasks_obj:
+
+    if all_tasks_query.exists():
+        # delete old tasks
+        for task in all_tasks_query:
             # delete the task info if the due date is today or before
             if (task.due_date - local_date).days <= 0:
                 task.delete()
 
     # goes through all the days prior to today
-    for readonly_date in (local_date - timedelta(n+1) for n in range(day_count)):
+    for readonly_date in (local_date - timedelta(n) for n in range(day_count+1)):
         # print(readonly_date)
         day_obj = Days.objects.filter(
             user__user=user, date=readonly_date)
@@ -313,7 +320,8 @@ def previous_days(earliest_day, user, local_date):
                         print(task.modified_date, local_date, day_obj[0].date)
                         task.hours_needed -= decimal.Decimal(hours)
                         task.modified_date = local_date
-                        task.start_date = local_date + timedelta(1)
+                        task.start_date = local_date + \
+                            timedelta((local_date - day_obj[0].date).days)
                         task.save()
 
             # day will be deleted if it is more than 2 days prior
@@ -333,23 +341,27 @@ def rescheduler(request, internal=False):
             reschedule_date = form.cleaned_data['date']
             # print(date, hours)
 
-            day_obj = Days.objects.get(
+            day_obj_query = Days.objects.filter(
                 user__user=request.user, date=date.fromisoformat(reschedule_date))
-            tasks = json.loads(day_obj.tasks_jsonDump)
-            sum_of_tasks = sum(tasks.values())
 
-            # backend validation that the sum of hours do not exceed 24hours
-            if sum_of_tasks + extra_hours > 24:
-                extra_hours -= (sum_of_tasks + extra_hours) - 24
+            # checks if the day exists before adding hours to that day.
+            if day_obj_query.exists():
+                day_obj = day_obj_query[0]
+                tasks = json.loads(day_obj.tasks_jsonDump)
+                sum_of_tasks = sum(tasks.values())
 
-            if extra_hours < 0:
-                return HttpResponseRedirect('/scheduler/')
+                # backend validation that the sum of hours do not exceed 24hours
+                if sum_of_tasks + extra_hours > 24:
+                    extra_hours -= (sum_of_tasks + extra_hours) - 24
 
-            day_obj.extra_hours = extra_hours
-            day_obj.save()
+                if extra_hours < 0:
+                    return HttpResponseRedirect('/scheduler/')
 
-            process(request, userinfo, None, {}, reschedule_range={
-                    "0": (getDateDelta(reschedule_date), getDateDelta(reschedule_date))})
+                day_obj.extra_hours = extra_hours
+                day_obj.save()
+
+                process(request, userinfo, None, {}, reschedule_range={
+                        "0": (getDateDelta(reschedule_date), getDateDelta(reschedule_date))})
 
             return HttpResponseRedirect('/scheduler/')
     else:
