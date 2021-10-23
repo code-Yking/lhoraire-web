@@ -101,8 +101,8 @@
               <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                 <div class="navbar-nav">
                   <a class="nav-link {% if request.path == '/scheduler/' %} active {% endif %}" aria-current="page" href="{% url 'scheduler:index' %}">Dashboard</a>
-                  <a class="nav-link {% if request.path == '/scheduler/edit' %} active {% endif %}" href="{% url 'scheduler:edit' %}">All Tasks</a>
-                  <a class="nav-link {% if request.path == '/scheduler/settings' %} active {% endif %}" href="{% url 'scheduler:settings' %}">Settings</a>
+                  <a class="nav-link {% if request.path == '/scheduler/edit/' %} active {% endif %}" href="{% url 'scheduler:edit' %}">All Tasks</a>
+                  <a class="nav-link {% if request.path == '/scheduler/settings/' %} active {% endif %}" href="{% url 'scheduler:settings' %}">Settings</a>
                   <a class="nav-link" href="{% url 'accounts:logout' %}">Log Out</a>
                 </div>
               </div>

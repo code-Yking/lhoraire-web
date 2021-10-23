@@ -49,9 +49,9 @@ body{
 {% block body %}
 <div class="outer-container">
 <div class="container">
-    {% if request.path == '/accounts/login' %}
+    {% if request.path == '/accounts/login/' %}
 <h1>Welcome Back!</h1>
-    {% elif request.path == '/accounts/signup' %}
+    {% elif request.path == '/accounts/signup/' %}
     <h1>Sign Up</h1>
     <div class="alert alert-secondary" role="alert">
         Get a free account to use lhoraire time mananagement tool.
@@ -77,11 +77,11 @@ body{
              {{ field }}
         </div>
         {% endfor %}
-        {% if request.path == '/accounts/login' %}
+        {% if request.path == '/accounts/login/' %}
         <button type="submit" class="btn btn-outline-primary">Login</button>
     </form>
     <a href="/accounts/signup">Or Sign up here</a>
-    {% elif request.path == '/accounts/signup' %}
+    {% elif request.path == '/accounts/signup/' %}
     <button type="submit" class="btn btn-outline-primary">Signup</button>
     </form>
     <a href="/accounts/login">Or login here</a>
