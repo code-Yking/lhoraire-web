@@ -297,6 +297,8 @@ def previous_days(earliest_day, user, local_date):
             if (task.due_date - local_date).days <= 0:
                 task.delete()
 
+    task_to_remove = {}
+
     # goes through all the days prior to today
     for readonly_date in (local_date - timedelta(n) for n in range(day_count+1)):
         # print(readonly_date)
@@ -313,21 +315,31 @@ def previous_days(earliest_day, user, local_date):
                     user__user=user, id=int(task))
 
                 if task_obj.exists():
-                    task = task_obj[0]
+                    task_info = task_obj[0]
                     # TODO make sure this actually works; and also better comment
                     # preventing duplication of reduction in time.
-                    if (local_date - task.modified_date).days > (local_date - day_obj[0].date).days:
-                        print(task.modified_date, local_date, day_obj[0].date)
-                        task.hours_needed -= decimal.Decimal(hours)
-                        task.modified_date = local_date
-                        task.start_date = local_date + \
-                            timedelta((local_date - day_obj[0].date).days)
-                        task.save()
+                    if (local_date - task_info.modified_date).days > (local_date - day_obj[0].date).days:
+                        print(task_info.modified_date,
+                              local_date, day_obj[0].date)
+                        task_to_remove[task] = task_to_remove.get(
+                            task, 0) + hours
 
             # day will be deleted if it is more than 2 days prior
             if (local_date - readonly_date).days > 2:
                 print('deleted ', readonly_date)
                 day_obj.delete()
+
+    for task, hours in task_to_remove.items():
+        task_obj = TaskInfo.objects.filter(
+            user__user=user, id=int(task))
+
+        if task_obj.exists():
+            task_info = task_obj[0]
+            task_info.hours_needed -= decimal.Decimal(hours)
+            task_info.modified_date = local_date
+            task_info.start_date = local_date + \
+                timedelta((local_date - day_obj[0].date).days)
+            task_info.save()
 
 
 def rescheduler(request, internal=False):
