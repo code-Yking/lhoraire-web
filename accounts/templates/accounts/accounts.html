@@ -35,8 +35,8 @@ body{
     align-items: center;
     /* background-color: aliceblue; */
     /* backdrop-filter: blur(2px); */
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     padding: 50px;
     border-radius: 10px;
     border-color: azure;
@@ -54,7 +54,8 @@ body{
     {% elif request.path == '/accounts/signup/' %}
     <h1>Sign Up</h1>
     <div class="alert alert-secondary" role="alert">
-        Get a free account to use lhoraire time mananagement tool.
+        Get a free account to use lhoraire time mananagement tool. <br>
+        Chose a unique username and a password that is at least 8 characters long.
       </div>
     {% endif %}
 
@@ -78,11 +79,11 @@ body{
         </div>
         {% endfor %}
         {% if request.path == '/accounts/login/' %}
-        <button type="submit" class="btn btn-outline-primary">Login</button>
+        <button type="submit" class="btn btn-primary">Login</button>
     </form>
     <a href="/accounts/signup">Or Sign up here</a>
     {% elif request.path == '/accounts/signup/' %}
-    <button type="submit" class="btn btn-outline-primary">Signup</button>
+    <button type="submit" class="btn btn-primary">Signup</button>
     </form>
     <a href="/accounts/login">Or login here</a>
     {% endif %}

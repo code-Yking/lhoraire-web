@@ -4,10 +4,12 @@
 {% block extrastyle %}
 
 <style>
-    @media only screen and (max-width: 768px) {
+    @media only screen and (max-width: 668px) {
   body, html{
     display: block;
-  }
+
+    
+}
 
   .card-container{
   margin-top: 20px; 
@@ -17,6 +19,7 @@
 }
 .home{
     background-attachment: fixed;
+        background-image: url("{% static 'main/img/1x/Asset 9 Copy.png' %}") !important
 }
 
 .card{
@@ -25,7 +28,6 @@
 }
 }
     .home{
-        
         background-image: url("{% static 'main/img/1x/Asset 9.png' %}");
         background-repeat: no-repeat;
         background-size: contain;
@@ -56,6 +58,10 @@
     p{
         font-size: 1.1em;
     }
+
+    .card-container .card{
+        flex: 1 1 0px;
+    }
 </style>
 
 {% endblock %}
@@ -63,12 +69,12 @@
 {% block body %}
 
 <div class='container-fluid home'>
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center; justify-content: space-around;">
         <img src="{% static 'main/img/icon3.png' %}" width="100" height="100"/> 
         <span>&nbsp; lhoraire</span>
     </div>
-    <div class="card" style="margin-top: 20px; width: 400px; ">
-        <p>Work smarter by using a time management tool that will spread out your work the way you desire. Automatically!</p>
+    <div class="card" style="margin-top: 20px; width: 400px;">
+        <p>Schedule generator that helps you arranges your tedious work, with no expense! Waste no more time deciding how to manage time.</p>
     
     <div style="display: flex;" class="joining">
         <a href="/accounts/signup" role="button" class="btn btn-primary">Sign Up</a>
