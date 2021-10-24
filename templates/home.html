@@ -7,8 +7,6 @@
     @media only screen and (max-width: 668px) {
   body, html{
     display: block;
-
-    
 }
 
   .card-container{
@@ -25,6 +23,10 @@
 .card{
   margin-right: auto;
   margin-top: 10px;
+}
+
+#summary{
+    width: auto;
 }
 }
     .home{
@@ -62,6 +64,10 @@
     .card-container .card{
         flex: 1 1 0px;
     }
+
+    #summary{
+        width: 400px;
+    }
 </style>
 
 {% endblock %}
@@ -71,9 +77,9 @@
 <div class='container-fluid home'>
     <div style="display: flex; align-items: center; justify-content: space-around;">
         <img src="{% static 'main/img/icon3.png' %}" width="100" height="100"/> 
-        <span>&nbsp; lhoraire</span>
+        <span>&nbsp;lhoraire</span>
     </div>
-    <div class="card" style="margin-top: 20px; width: 400px;">
+    <div class="card" id="summary" style="margin-top: 20px;">
         <p>Schedule generator that helps you arranges your tedious work, with no expense! Waste no more time deciding how to manage time.</p>
     
     <div style="display: flex;" class="joining">
