@@ -31,6 +31,10 @@
                              {{ field }}
                         </div>
                         {% endfor %}
+
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
                         </div>
                     </div>
                   </div>

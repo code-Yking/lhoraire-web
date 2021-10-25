@@ -554,12 +554,12 @@ def edit_tasks(request):
                     # algorithm is rerun only if any of these three are edited
                     if 'due_date' in form.changed_data or 'hours_needed' in form.changed_data or 'gradient' in form.changed_data:
                         needs_redo += 1
-                        updated_tasks[str(obj.id)] = oldtasks.pop(str(obj.id))
+                        updated_tasks[int(obj.id)] = oldtasks.pop(str(obj.id))
 
                         if float(obj.hours_needed):
-                            task = TaskModel(id=obj.id, due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
+                            task = TaskModel(id=int(obj.id), due=getDateDelta(obj.due_date), work=float(obj.hours_needed),
                                              week_day_work=float(userinfo.week_day_work), days=0, gradient=obj.gradient, today=getDateDelta(local_date) + 1)
-                            newtask_cumulation[(form.instance.pk, obj.task_name,
+                            newtask_cumulation[(int(form.instance.pk), (obj.task_name),
                                                 getDateDelta(obj.due_date))] = task
                         else:
                             TaskInfo.objects.get(id=obj.id).delete()

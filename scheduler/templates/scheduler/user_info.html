@@ -30,7 +30,7 @@
             {% else %}
             <h4>Change Settings</h4>
             {% endif %}
-        <form action="initial-info" method="post">
+        <form action="{{request.path}}" method="post">
             {% csrf_token %}
             {% for field in form %}
                 <div class="mb-3">
