@@ -7,33 +7,39 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduler', '0014_taskinfo_color'),
+        ("scheduler", "0014_taskinfo_color"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='days',
-            name='tasks',
+            model_name="days",
+            name="tasks",
         ),
         migrations.AddField(
-            model_name='days',
-            name='tasks_jsonDump',
-            field=models.CharField(default='', max_length=481),
+            model_name="days",
+            name="tasks_jsonDump",
+            field=models.CharField(default="", max_length=481),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='days',
-            name='user',
-            field=models.ForeignKey(default='', on_delete=django.db.models.deletion.CASCADE, to='scheduler.userinfo'),
+            model_name="days",
+            name="user",
+            field=models.ForeignKey(
+                default="",
+                on_delete=django.db.models.deletion.CASCADE,
+                to="scheduler.userinfo",
+            ),
         ),
         migrations.AlterField(
-            model_name='taskinfo',
-            name='hours_needed',
-            field=models.DecimalField(decimal_places=2, default=10, max_digits=4),
+            model_name="taskinfo",
+            name="hours_needed",
+            field=models.DecimalField(
+                decimal_places=2, default=10, max_digits=4
+            ),
         ),
         migrations.AlterField(
-            model_name='taskinfo',
-            name='task_description',
+            model_name="taskinfo",
+            name="task_description",
             field=models.TextField(null=True),
         ),
     ]

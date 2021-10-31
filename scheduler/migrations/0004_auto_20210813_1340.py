@@ -9,22 +9,28 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('scheduler', '0003_days_user'),
+        ("scheduler", "0003_days_user"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='days',
-            name='user',
+            model_name="days",
+            name="user",
         ),
         migrations.AddField(
-            model_name='taskinfo',
-            name='user',
-            field=models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="taskinfo",
+            name="user",
+            field=models.ForeignKey(
+                default=None,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='taskinfo',
-            name='days_needed',
-            field=models.DecimalField(decimal_places=2, default=0, max_digits=4),
+            model_name="taskinfo",
+            name="days_needed",
+            field=models.DecimalField(
+                decimal_places=2, default=0, max_digits=4
+            ),
         ),
     ]

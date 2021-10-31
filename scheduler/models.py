@@ -1,18 +1,22 @@
 from datetime import datetime, date
 from django.db import models
 from django.conf import settings
+
 # from django.contrib.auth.models import User
 from django.db.models.deletion import CASCADE
 
 import pytz
+
 # Create your models here.
 
 
 class UserInfo(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )
     time_zone = models.IntegerField(
-        choices=list(enumerate(pytz.common_timezones)))
+        choices=list(enumerate(pytz.common_timezones))
+    )
 
     week_day_work = models.DecimalField(decimal_places=2, max_digits=4)
     max_week_day_work = models.DecimalField(decimal_places=2, max_digits=4)
@@ -32,15 +36,25 @@ class TaskInfo(models.Model):
     due_date = models.DateField()
 
     hours_needed = models.DecimalField(
-        decimal_places=2, max_digits=5, default=10)
+        decimal_places=2, max_digits=5, default=10
+    )
     days_needed = models.DecimalField(
-        decimal_places=2, max_digits=4, default=0, null=True)
+        decimal_places=2, max_digits=4, default=0, null=True
+    )
 
     total_hours = models.DecimalField(
-        decimal_places=2, max_digits=5, default=0, null=True)
+        decimal_places=2, max_digits=5, default=0, null=True
+    )
 
-    gradient = models.CharField(max_length=1, default='+', choices=(
-        ['+', 'Increasing'], ['-', 'Decreasing'], ['0', 'Roughly same']))
+    gradient = models.CharField(
+        max_length=1,
+        default="+",
+        choices=(
+            ["+", "Increasing"],
+            ["-", "Decreasing"],
+            ["0", "Roughly same"],
+        ),
+    )
 
     to_reschedule = models.DecimalField(decimal_places=2, max_digits=4)
 
@@ -71,7 +85,8 @@ class Days(models.Model):
     user = models.ForeignKey(UserInfo, on_delete=CASCADE, default="")
 
     extra_hours = models.DecimalField(
-        decimal_places=2, max_digits=4, default=0)
+        decimal_places=2, max_digits=4, default=0
+    )
 
     def __str__(self):
-        return f'{self.date}'
+        return f"{self.date}"

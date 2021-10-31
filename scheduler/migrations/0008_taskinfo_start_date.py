@@ -7,13 +7,13 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduler', '0007_auto_20210813_2311'),
+        ("scheduler", "0007_auto_20210813_2311"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='taskinfo',
-            name='start_date',
+            model_name="taskinfo",
+            name="start_date",
             field=models.DateField(default=django.utils.timezone.now),
             preserve_default=False,
         ),

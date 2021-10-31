@@ -6,13 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduler', '0012_auto_20210818_0937'),
+        ("scheduler", "0012_auto_20210818_0937"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='taskinfo',
-            name='gradient',
-            field=models.CharField(choices=[['+', 'Increasing'], ['-', 'Decreasing'], ['0', 'Roughly same']], default='+', max_length=1),
+            model_name="taskinfo",
+            name="gradient",
+            field=models.CharField(
+                choices=[
+                    ["+", "Increasing"],
+                    ["-", "Decreasing"],
+                    ["0", "Roughly same"],
+                ],
+                default="+",
+                max_length=1,
+            ),
         ),
     ]

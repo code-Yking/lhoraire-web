@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduler', '0022_remove_tasks_hours_2'),
+        ("scheduler", "0022_remove_tasks_hours_2"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='taskinfo',
-            name='total_hours',
-            field=models.DecimalField(decimal_places=2, default=0, max_digits=5, null=True),
+            model_name="taskinfo",
+            name="total_hours",
+            field=models.DecimalField(
+                decimal_places=2, default=0, max_digits=5, null=True
+            ),
         ),
     ]

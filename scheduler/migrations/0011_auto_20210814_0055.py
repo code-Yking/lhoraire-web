@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduler', '0010_auto_20210814_0030'),
+        ("scheduler", "0010_auto_20210814_0030"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='taskinfo',
-            name='modified_date',
+            model_name="taskinfo",
+            name="modified_date",
             field=models.DateField(null=True),
         ),
     ]

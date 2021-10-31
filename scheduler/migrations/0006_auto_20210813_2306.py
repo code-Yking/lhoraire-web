@@ -10,23 +10,26 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('scheduler', '0005_auto_20210813_1406'),
+        ("scheduler", "0005_auto_20210813_1406"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='taskinfo',
-            name='created_date',
+            model_name="taskinfo",
+            name="created_date",
             field=models.DateField(default=datetime.datetime.now),
         ),
         migrations.AddField(
-            model_name='taskinfo',
-            name='gradient',
+            model_name="taskinfo",
+            name="gradient",
             field=models.CharField(max_length=1, null=True),
         ),
         migrations.AlterField(
-            model_name='taskinfo',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="taskinfo",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

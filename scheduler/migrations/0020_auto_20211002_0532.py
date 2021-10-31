@@ -6,20 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduler', '0019_taskinfo_total_hours'),
+        ("scheduler", "0019_taskinfo_total_hours"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='days',
-            name='test',
-            field=models.DateField(default='2021-09-10'),
+            model_name="days",
+            name="test",
+            field=models.DateField(default="2021-09-10"),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='tasks',
-            name='hours_2',
+            model_name="tasks",
+            name="hours_2",
             field=models.DecimalField(
-                decimal_places=4, default=0, max_digits=10),
+                decimal_places=4, default=0, max_digits=10
+            ),
         ),
     ]
