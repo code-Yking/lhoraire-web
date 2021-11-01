@@ -332,6 +332,20 @@ def add_tasks(request, internal=False):
             newtask_cumulation = {}
 
             for form in formset:
+                # validates whether the limit of 8 tasks with same due date
+                dues_work = TaskInfo.objects.filter(
+                    due_date=form.cleaned_data['due_date'],
+                    user__user = request.user
+                )
+
+                # print('LEN OF DUE WORKS', dues_work, len(dues_work))
+                if len(dues_work) >= 8:
+                    messages.warning(
+                        request,
+                        'Max limit of 8 tasks with same due date')
+                    # redirect to a dashboard URL:
+                    return HttpResponseRedirect("/scheduler/")
+
                 obj = form.save(commit=False)
                 obj.user = userinfo
                 obj.to_reschedule = 0
@@ -891,13 +905,21 @@ def userinfo(request):
             # Form is valid
             # TODO fix
             if form.is_valid():
-                # if
+                # no change happens when time zone is tried to be changed, 
+                # ie it cannot be changed
                 if (
                     "week_day_work" in form.changed_data
                     or "max_week_day_work" in form.changed_data
                     or "week_end_work" in form.changed_data
                     or "max_week_end_work" in form.changed_data
                 ):
+                    if form.cleaned_data['week_day_work'] \
+                    > form.cleaned_data['max_week_day_work'] \
+                    or form.cleaned_data['week_end_work'] \
+                    > form.cleaned_data['max_week_end_work']:
+                        messages.warning(request, 'Max limits need to be \
+lesser than normal limits.')
+                        return HttpResponseRedirect("/scheduler/settings")
 
                     local_date = get_local_date(user_info[0])
                     latest = (
@@ -920,13 +942,27 @@ def userinfo(request):
                     )
 
                 a = form.save(commit=False)
+                if a.time_zone != time_zone:
+                    messages.warning(request, 'Time Zones cannot be changed')
                 a.time_zone = time_zone
                 a.save()
 
             return redirect("/scheduler/settings")
         else:
             form = UserInfoForm(request.POST)
+
             if form.is_valid():
+
+                # see if the inputs are valid
+                if form.cleaned_data['week_day_work'] \
+                > form.cleaned_data['max_week_day_work'] \
+                or form.cleaned_data['week_end_work'] \
+                > form.cleaned_data['max_week_end_work']:
+                    messages.warning(request, 'Max limits need to be lesser\
+than normal limits.')
+                    return HttpResponseRedirect("/scheduler/initial-info")
+                
+                # saves and returns to dashboard
                 a = form.save(commit=False)
                 a.user = request.user
                 a.save()

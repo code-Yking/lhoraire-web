@@ -146,7 +146,8 @@ class ReschedulerDateForm(forms.Form):
 
     # class Meta:
     #     widgets = {
-    #         'extra_hours': forms.TextInput(attrs={'class': 'form-control', 'type': 'number'}),
+    #         'extra_hours': forms.TextInput(attrs={'class': 'form-control', 
+    # 'type': 'number'}),
     #         'date': forms.TextInput(attrs={'type': 'hidden'}),
     #     }
 
