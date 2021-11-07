@@ -14,9 +14,9 @@ def signup_view(request):
             user = form.save()
             login(request, user)
             return redirect('scheduler:userinfo')
-        else:
-            messages.error(request, 'Insert valid credentials')
-            return redirect('/accounts/signup')
+        # else:
+        #     messages.error(request, 'Insert valid credentials')
+        #     return redirect('/accounts/signup')
     else:
         form = UserCreationForm()
     return render(request, 'accounts/accounts.html', {'form': form})
