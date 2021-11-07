@@ -118,7 +118,7 @@ def get_old_schedule(request, oldtasks, localdate):
         if datetime.strptime(day, "%Y-%m-%d").date() - localdate < timedelta(
             1
         ):
-            print("DAY that is removed, ", day)
+            
             exist_schedule_formated.pop(day)
             continue
 
@@ -139,7 +139,7 @@ def run_algorithm(
     # included in the reschedule
     new_tasks_filtered = Filter(newtask_cumulation, oldtasks, {}, {}, {}, {})
 
-    # print('EXIST:   ', exist_schedule_formated)
+    
     # performing backend schedule generation
     process = Reposition(
         new_tasks_filtered,
@@ -189,12 +189,12 @@ or change the due date or hours needed in \
                              the All Tasks page for these tasks.",
         )
 
-    print("extrahours", extrahours)
+    # format to save the data
     new_schedule_reformated = [
         {
             "date": datestr,
             "tasks_jsonDump": {
-                n.strip("t"): k for n, k in info["quots"].items()
+                n.strip("t"): round(k, 3) for n, k in info["quots"].items()
             },
             "user": userinfo,
             "extra_hours": extrahours.get(getDateDelta(datestr), 0),
@@ -202,14 +202,12 @@ or change the due date or hours needed in \
         for datestr, info in final_schedule.items()
     ]
 
-    print(new_schedule_reformated)
+    
     # updates days info
     daysserializer.update(days, new_schedule_reformated, local_date)
 
 
 # the process of running the algorithm and updating the database
-
-
 def process(
     request,
     userinfo,
@@ -217,19 +215,12 @@ def process(
     newtask_cumulation={},
     reschedule_range={},
 ):
-    print("new task cumul OLD")
-    pprint.pprint(newtask_cumulation)
     # gets the local date of the user
     local_date = get_local_date(userinfo)
 
     # if there is no oldtasks given, get them.
     if oldtasks is None:
         oldtasks = get_old_tasks(request, local_date)
-        print("no old tasks given")
-        pprint.pprint(oldtasks)
-    else:
-        print("OLD TASKS GIVEN!")
-        pprint.pprint(oldtasks)
 
     # getting existing schedule and activating the days serializer
 
@@ -239,18 +230,15 @@ def process(
         2
     ]
 
-    print("old schedule")
-    pprint.pprint(exist_schedule_formated)
 
     # getting the extra hours
     extra_hours = get_old_schedule(request, oldtasks, local_date)[3]
-    print("extra_hours BEFORE ", extra_hours)
 
     man_reschedule = False
     if reschedule_range:
         man_reschedule = True
 
-    print()
+    
 
     new_tasks_filtered, used_day_ranged = Filter(
         newtask_cumulation,
@@ -272,7 +260,7 @@ def process(
     )
     # extra_hours = get_old_schedule(request, oldtasks)[3]
 
-    # print('EXIST:   ', old_schedule)
+    
     # performing backend schedule generation
     schedule = Reposition(
         new_tasks_filtered,
@@ -283,7 +271,7 @@ def process(
         extra_hours,
         local_date,
     )
-    print("extra_hours AFTER ", extra_hours)
+    
 
     # results of backend
     final_schedule = schedule.schedule  # schedule as dict
@@ -338,7 +326,7 @@ def add_tasks(request, internal=False):
                     user__user = request.user
                 )
 
-                # print('LEN OF DUE WORKS', dues_work, len(dues_work))
+                
                 if len(dues_work) >= 8:
                     messages.warning(
                         request,
@@ -393,9 +381,8 @@ def previous_days(earliest_day, user, local_date):
     day_count = int(
         (local_date - datetime.strptime(earliest_day, "%Y-%m-%d").date()).days
     )
-    # print('day_count ', day_count)
-    print("earliest_day ", earliest_day)
-
+    
+    
     all_tasks_query = TaskInfo.objects.filter(user__user=user)
 
     if all_tasks_query.exists():
@@ -411,7 +398,7 @@ def previous_days(earliest_day, user, local_date):
     for readonly_date in (
         local_date - timedelta(n) for n in range(day_count + 1)
     ):
-        # print(readonly_date)
+        
         day_obj = Days.objects.filter(user__user=user, date=readonly_date)
 
         # if the day exists
@@ -432,20 +419,20 @@ def previous_days(earliest_day, user, local_date):
                     if (local_date - task_info.modified_date).days > (
                         local_date - day_obj[0].date
                     ).days:
-                        print(
-                            task_info.modified_date,
-                            local_date,
-                            day_obj[0].date,
-                        )
+                        
+                        #     task_info.modified_date,
+                        #     local_date,
+                        #     day_obj[0].date,
+                        # )
                         task_to_remove[task] = (
                             task_to_remove.get(task, 0) + hours
                         )
 
             # day will be deleted if it is more than 2 days prior
             if (local_date - readonly_date).days > 2:
-                print("deleted ", readonly_date)
                 day_obj.delete()
 
+    # removing task hours from the task info
     for task, hours in task_to_remove.items():
         task_obj = TaskInfo.objects.filter(user__user=user, id=int(task))
 
@@ -454,13 +441,14 @@ def previous_days(earliest_day, user, local_date):
             task_info.hours_needed -= decimal.Decimal(hours)
             task_info.modified_date = local_date
             task_info.start_date = local_date + timedelta(
-                (local_date - day_obj[0].date).days
+                # (local_date - task_info.start_date).days
+                1
             )
             task_info.save()
 
-
+# view onto which reschedule form will POST to
 def rescheduler(request, internal=False):
-    # print(request.method)
+    
     if request.method == "POST":
         form = ReschedulerDateForm(request.POST)
         if form.is_valid():
@@ -468,7 +456,7 @@ def rescheduler(request, internal=False):
             # from_date = form.cleaned_data['from_date']
             extra_hours = float(form.cleaned_data["extra_hours"])
             reschedule_date = form.cleaned_data["date"]
-            # print(date, hours)
+            
 
             day_obj_query = Days.objects.filter(
                 user__user=request.user,
@@ -507,7 +495,7 @@ def rescheduler(request, internal=False):
             return HttpResponseRedirect("/scheduler/")
     else:
         if internal:
-            print("yes")
+            
             return ReschedulerDateForm()
         else:
             return HttpResponseRedirect("/scheduler/")
@@ -516,7 +504,6 @@ def rescheduler(request, internal=False):
 # TODO fix this
 
 # view showing the dashboard
-
 
 @login_required(login_url="/accounts/login/")
 def index(request):
@@ -538,7 +525,7 @@ def index(request):
     if tasks_query.exists():
 
         for task in tasks_query:
-            # print(task)
+            
             # delete the task info if the due date is today or before
             if (task.due_date - local_date).days <= 0:
                 task.delete()
@@ -624,19 +611,20 @@ def index(request):
             for day in daysserializer.data
         }
 
-        # if days before yesterday exist, delete them
-        for day, data in dict(schedule).items():
-            if datetime.strptime(
-                day, "%Y-%m-%d"
-            ).date() - local_date < timedelta(-1):
-                schedule.pop(day)
-                print(day)
-                continue
 
         # schedule is valid
         if schedule:
             # TODO maybe integrate?
             earliest_day = list(schedule.keys())[0]
+            previous_days(earliest_day, request.user, local_date)
+
+            # if days before yesterday exist, delete them
+            for day, data in dict(schedule).items():
+                if datetime.strptime(
+                    day, "%Y-%m-%d"
+                ).date() - local_date < timedelta(-1):
+                    schedule.pop(day)
+                    continue
 
             # TODO remove latest
             latest = Days.objects.filter(user__user=request.user).latest(
@@ -667,7 +655,6 @@ def index(request):
 
             last_day = list(schedule.keys())[-1]
 
-            previous_days(earliest_day, request.user, local_date)
 
             todays_todo = (
                 schedule[local_date.strftime("%Y-%m-%d")]["quote"]
@@ -730,7 +717,7 @@ def edit_tasks(request):
         )
 
         tasks_query = TaskInfo.objects.filter(user__user=request.user)
-        # print("TASKS", tasks_query)
+        
         if tasks_query.exists():
             taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
@@ -751,7 +738,7 @@ def edit_tasks(request):
                 ]
                 for info in taskinfoserializer.data
             }
-            # print(tasks)
+            
             to_reschedule = {
                 task: float(info[3])
                 for task, info in tasks.items()
@@ -796,7 +783,7 @@ def edit_tasks(request):
                         oldtasks[str(obj.id)][0] - float(obj.hours_needed)
                     )
                     obj.save()
-                    # print('id ', obj.id)
+                    
                     # algorithm is rerun only if any of these three are edited
                     if (
                         "due_date" in form.changed_data
@@ -913,13 +900,22 @@ def userinfo(request):
                     or "week_end_work" in form.changed_data
                     or "max_week_end_work" in form.changed_data
                 ):
+                    if form.cleaned_data['week_day_work'] > 24\
+                    or form.cleaned_data['max_week_day_work'] > 24\
+                    or form.cleaned_data['week_end_work'] >24\
+                    or form.cleaned_data['max_week_end_work'] > 24:
+                        messages.warning(request, 'Daily limits need to be \
+less than 24 hours.')
+                        return HttpResponseRedirect("/scheduler/settings")
+                        
                     if form.cleaned_data['week_day_work'] \
                     > form.cleaned_data['max_week_day_work'] \
                     or form.cleaned_data['week_end_work'] \
                     > form.cleaned_data['max_week_end_work']:
                         messages.warning(request, 'Max limits need to be \
-lesser than normal limits.')
+greater than normal limits.')
                         return HttpResponseRedirect("/scheduler/settings")
+
 
                     local_date = get_local_date(user_info[0])
                     latest = (
@@ -927,7 +923,7 @@ lesser than normal limits.')
                         .latest("date")
                         .date
                     )
-                    print("entire refresh")
+                    
                     process(
                         request,
                         user_info[0],
@@ -954,11 +950,19 @@ lesser than normal limits.')
             if form.is_valid():
 
                 # see if the inputs are valid
+                if form.cleaned_data['week_day_work'] > 24\
+                or form.cleaned_data['max_week_day_work'] > 24\
+                or form.cleaned_data['week_end_work'] >24\
+                or form.cleaned_data['max_week_end_work'] > 24:
+                    messages.warning(request, 'Daily limits need to be \
+less than 24 hours.')
+                    return HttpResponseRedirect("/scheduler/settings")
+
                 if form.cleaned_data['week_day_work'] \
                 > form.cleaned_data['max_week_day_work'] \
                 or form.cleaned_data['week_end_work'] \
                 > form.cleaned_data['max_week_end_work']:
-                    messages.warning(request, 'Max limits need to be lesser\
+                    messages.warning(request, 'Max limits need to be greater \
 than normal limits.')
                     return HttpResponseRedirect("/scheduler/initial-info")
                 
@@ -978,7 +982,7 @@ than normal limits.')
             add_tasks_formset = add_tasks(request=request, internal=True)
 
             tasks_query = TaskInfo.objects.filter(user__user=request.user)
-            # print("TASKS", tasks_query)
+            
             if tasks_query.exists():
                 taskinfoserializer = TaskInfoSerializer(tasks_query, many=True)
 
@@ -999,7 +1003,7 @@ than normal limits.')
                     ]
                     for info in taskinfoserializer.data
                 }
-                # print(tasks)
+                
                 to_reschedule = {
                     task: float(info[3])
                     for task, info in tasks.items()
