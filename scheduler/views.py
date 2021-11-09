@@ -113,7 +113,6 @@ def get_old_schedule(request, oldtasks, localdate):
         for day in daysserializer.data
     }
 
-    # TODO check if this is needed
     for day, data in dict(exist_schedule_formated).items():
         if datetime.strptime(day, "%Y-%m-%d").date() - localdate < timedelta(
             1
@@ -186,7 +185,7 @@ clicking on the top right Unschedulable Tasks button. <br> \
 You can: <br> \
 add extra hours to days by clicking the + button on hovering on them <br> \
 or change the due date or hours needed in \
-                             the All Tasks page for these tasks.",
+the All Tasks page for these tasks.",
         )
 
     # format to save the data
@@ -413,7 +412,6 @@ def previous_days(earliest_day, user, local_date):
 
                 if task_obj.exists():
                     task_info = task_obj[0]
-                    # TODO make sure this actually works; and also better
                     # comment
                     # preventing duplication of reduction in time.
                     if (local_date - task_info.modified_date).days > (
@@ -501,7 +499,6 @@ def rescheduler(request, internal=False):
             return HttpResponseRedirect("/scheduler/")
 
 
-# TODO fix this
 
 # view showing the dashboard
 
@@ -614,7 +611,6 @@ def index(request):
 
         # schedule is valid
         if schedule:
-            # TODO maybe integrate?
             earliest_day = list(schedule.keys())[0]
             previous_days(earliest_day, request.user, local_date)
 
@@ -626,7 +622,6 @@ def index(request):
                     schedule.pop(day)
                     continue
 
-            # TODO remove latest
             latest = Days.objects.filter(user__user=request.user).latest(
                 "date"
             )
@@ -890,7 +885,6 @@ def userinfo(request):
             )
 
             # Form is valid
-            # TODO fix
             if form.is_valid():
                 # no change happens when time zone is tried to be changed, 
                 # ie it cannot be changed
