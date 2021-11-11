@@ -204,7 +204,8 @@
           $(document).ready(function () {
             $(".datepicker").datepicker({
                 minDate: 2,
-                maxDate: '+3M'
+                maxDate: '+3M',
+                dateFormat: 'yy-mm-dd'
             });
             
             $('#createTask .form-control-color').val("#" + Math.floor(Math.random()*16777215).toString(16));

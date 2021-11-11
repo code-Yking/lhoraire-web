@@ -15,6 +15,10 @@ class DateInput(forms.DateInput):
 
 
 class TaskForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(TaskForm, self).__init__(*args, **kwargs) 
+        self.auto_id = False
+
     default_data = {}
 
     class Meta:
@@ -117,10 +121,10 @@ class UserInfoForm(ModelForm):
             ),
         }
         labels = {
-            "week_day_work": "No of Hours you can spend on a Weekday",
+            "week_day_work": "Number of Hours you can spend on a Weekday",
             "max_week_day_work": "Upper limit of Hours you can spend on a \
 Weekday",
-            "week_end_work": "No of Hours you can spend on a Weekend day",
+            "week_end_work": "Number of Hours you can spend on a Weekend day",
             "max_week_end_work": "Upper limit of Hours you can spend on a \
 Weekend day",
         }
